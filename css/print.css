@@ -1,0 +1,99 @@
+/* =========================================================================
+ * AI 360 — A4 공문서 · QR 현장 게시물 · 기관장 보고용 1페이지 요약 인쇄 전용 스타일시트
+ * ========================================================================= */
+
+.qr-poster-sheet {
+  text-align: center;
+  padding: 44px 38px !important;
+}
+.poster-badge {
+  display: inline-block;
+  background: #0f2942;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+.poster-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f2942;
+  margin: 0 0 8px;
+}
+.poster-qr-kind {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1d4ed8;
+  margin: 0 0 22px;
+}
+.poster-qr-frame {
+  display: inline-flex;
+  padding: 20px;
+  border: 4px solid #0f2942;
+  border-radius: 16px;
+  background: #ffffff;
+  margin-bottom: 24px;
+}
+.poster-info-box {
+  max-width: 520px;
+  margin: 0 auto 18px;
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid #94a3b8;
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.poster-guide {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body.printing-a4-doc > *:not(#a4-print-root) {
+    display: none !important;
+  }
+
+  body.printing-a4-doc #a4-print-root {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-a4-doc .official-doc-sheet {
+    max-width: none !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 4mm 6mm !important;
+    page-break-inside: avoid;
+  }
+
+  /* 일반 Ctrl+P 인쇄 시에도 헤더·사이드바 숨김 */
+  .global-header,
+  .app-sidebar,
+  .toast-container,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .app-shell {
+    display: block !important;
+  }
+}
+
