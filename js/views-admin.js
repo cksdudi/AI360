@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AI 360 — 총괄 관리자 화면 Part 1 (① 통합 대시보드, ② 집합교육 전주기 자동화 관리)
  */
 (function () {
@@ -115,6 +115,7 @@
         <div class="head-actions">
           <button id="btn-dash-new-course" class="btn btn-primary">+ 신규 집합교육 등록</button>
           <button class="btn btn-outline" data-admin-go="admin-analytics">📄 기관장 1페이지 보고서</button>
+          <button id="btn-dash-download" class="btn btn-accent">📥 대시보드 다운로드</button>
         </div>
       </div>
 

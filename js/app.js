@@ -1,13 +1,15 @@
 /**
- * AI 360 — 메인 애플리케이션 컨트롤러 (모바일 반응형 웹앱 지원 강화)
- * 상단 글로벌 바(시연 사용자 5단계 전환, 나의 화면 ↔ 관리 화면 전환, 샘플 데이터 초기화, 발표 시연 가이드),
- * 모바일 반응형 사이드 드로어, 모바일 하단 탭바(Bottom Navigation Bar),
- * 모바일 QR 스캔 시뮬레이터 모달, 구성원 드릴다운 모달, A4 공문서 인쇄 제어
+ * AI 360 — 메인 애플리케이션 컨트롤러
+ * 1. 상단 글로벌 바 (5단계 시연 사용자 전환, 나의 화면 ↔ 관리 화면 전환, 샘플 데이터 초기화, 발표 시연 가이드)
+ * 2. 좌측 상단 AI 360 클릭 시 "플랫폼 특장점 소개 페이지"
+ * 3. 캘린더 날짜 범위 설정 기반 "대시보드 다운로드" (A4 인쇄/PDF 및 통계 엑셀 다운로드)
+ * 4. 모바일 반응형 사이드 드로어 및 하단 탭 바 (Bottom Navigation Bar)
+ * 5. 모바일 QR 스캔 시뮬레이터 모달, 구성원 드릴다운 모달, A4 공문서 인쇄 제어
  */
 (function () {
   'use strict';
 
-  const { esc, showToast } = window.AI360Utils;
+  const { esc, showToast, exportToXLSX } = window.AI360Utils;
   const { SATISFACTION_ITEMS, ASSESSMENT_ITEMS, getGradeInfo, formatTargetSummary } = window.AI360Seed;
   const Store = window.AI360Store;
   const Charts = window.AI360Charts;
@@ -89,6 +91,12 @@
     const mainEl = document.getElementById('app-main-view');
     if (!mainEl) return;
 
+    // AI 360 특장점 소개 페이지 선택 시
+    if (session.activeMenu === 'platform-intro') {
+      renderPlatformIntro(mainEl);
+      return;
+    }
+
     if (session.role === 'student' || session.viewMode === 'personal') {
       window.AI360StudentViews.renderStudentMenu(session.activeMenu, mainEl);
     } else if (session.role === 'admin') {
@@ -102,7 +110,6 @@
     const switcherMount = document.getElementById('header-controls-mount');
     if (!switcherMount) return;
 
-    // 현재 선택한 역할에서 빠르게 바꿔볼 수 있는 세부 사용자 옵션 구성
     let personaOptions = [];
     if (session.role === 'student') {
       const presets = ['EMP-0085', 'EMP-0086', 'EMP-0002', 'EMP-0145', 'EMP-0780', 'EMP-0999'];
@@ -127,7 +134,12 @@
     }
 
     switcherMount.innerHTML = `
-      <!-- 시연용 샘플 데이터 상시 배지 (모바일에서는 간소화) -->
+      <!-- 특장점 소개 버튼 (헤더 퀵링크) -->
+      <button id="hdr-btn-intro" class="btn btn-sm btn-ghost text-white" title="플랫폼 5대 특장점 안내">
+        ✨ <span class="hdr-btn-text">플랫폼 소개</span>
+      </button>
+
+      <!-- 시연용 샘플 데이터 상시 배지 -->
       <div class="sample-global-badge" title="모든 수치는 고정 시드 기반 가상 샘플 데이터입니다.">
         <span class="pulse-dot"></span> <span class="badge-txt">시연용 샘플</span>
       </div>
@@ -161,6 +173,11 @@
         <button id="btn-reset-sample" class="btn btn-sm btn-reset" title="모든 샘플 데이터를 초기 시드 상태로 되돌립니다.">↺ <span class="hdr-btn-text">초기화</span></button>
       </div>
     `;
+
+    switcherMount.querySelector('#hdr-btn-intro')?.addEventListener('click', () => {
+      Store.setActiveMenu('platform-intro');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     switcherMount.querySelector('#global-role-select')?.addEventListener('change', (e) => {
       Store.switchRole(e.target.value);
@@ -201,10 +218,15 @@
       <div class="sidebar-drawer-header">
         <div class="sdh-title">
           <span class="brand-emblem-sm">360°</span>
-          <strong>메뉴 &amp; 권한 설정</strong>
+          <strong>AI 360 메뉴</strong>
         </div>
         <button id="btn-sidebar-close" class="sidebar-close-btn" aria-label="메뉴 닫기">✕</button>
       </div>
+
+      <!-- 플랫폼 특장점 소개 배너 버튼 (사이드바 최상단) -->
+      <button id="side-btn-intro" class="btn btn-outline btn-block ${session.activeMenu === 'platform-intro' ? 'btn-primary' : ''}" style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
+        ✨ AI 360 핵심 특장점 소개
+      </button>
 
       <div class="sidebar-profile-card">
         <div class="sp-role-row">
@@ -219,7 +241,7 @@
         </div>
       </div>
 
-      <!-- 모바일에서 빠른 역할 전환 편의를 위한 인-사이드바 퀵 스위처 (모바일 뷰 전용) -->
+      <!-- 모바일 퀵 역할 전환기 -->
       <div class="sidebar-mobile-quick-switch">
         <div class="smq-label">⚡ 빠른 권한 단계 전환:</div>
         <div class="smq-role-grid">
@@ -256,6 +278,13 @@
         <div class="slogan-sub">※ 본 시스템의 모든 인원(1,000명)과 실적 수치는 보고·시연용 가상 샘플입니다.</div>
       </div>
     `;
+
+    // 특장점 소개 버튼
+    navEl.querySelector('#side-btn-intro')?.addEventListener('click', () => {
+      Store.setActiveMenu('platform-intro');
+      closeSidebar();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     // 메뉴 클릭 이벤트
     navEl.querySelectorAll('[data-side-menu]').forEach((b) => {
@@ -312,7 +341,6 @@
         { id: 'menu-more', icon: '☰', label: '전체' }
       ];
     } else {
-      // manager
       tabs = [
         { id: 'mgr-overview', icon: '📊', label: '현황' },
         { id: 'mgr-members', icon: '👥', label: '구성원' },
@@ -350,6 +378,473 @@
         }
       });
     });
+  }
+
+  /* =========================================================================
+   * 1. AI 360 플랫폼 핵심 특장점 소개 페이지 렌더링
+   * ========================================================================= */
+  function renderPlatformIntro(container) {
+    container.innerHTML = `
+      <div class="intro-container">
+        <!-- 상단 히어로 배너 -->
+        <div class="intro-hero">
+          <div class="intro-hero-tag">
+            <span>✨</span> 공공부문 AI 역량 전주기 통합 운영 솔루션
+          </div>
+          <h1 class="intro-hero-title">
+            AI 역량의 시작부터 성장까지, <span>AI 360°</span>
+          </h1>
+          <p class="intro-hero-desc">
+            <strong>산업통상부 및 6개 소속기관(인원 1,000명)</strong>을 위한 맞춤형 AI 역량 플랫폼입니다.<br>
+            집합교육의 반복 행정업무를 단 한 번의 등록으로 <strong>100% 자동화</strong>하고, 
+            <strong>7개 영역 역량 진단</strong> 결과를 개인별 교육 추천 및 기관 성과 분석으로 실시간 환류합니다.
+          </p>
+
+          <div class="intro-hero-stats">
+            <div class="intro-stat-item">
+              <div class="intro-stat-num">85% ↓</div>
+              <div class="intro-stat-lbl">교육 기획·안내·보고 행정 소요시간 대폭 단축</div>
+            </div>
+            <div class="intro-stat-item">
+              <div class="intro-stat-num">100%</div>
+              <div class="intro-stat-lbl">종이 없는 모바일 QR 출결·만족도 원터치 디지털화</div>
+            </div>
+            <div class="intro-stat-item">
+              <div class="intro-stat-num">+6.8점 ↑</div>
+              <div class="intro-stat-lbl">교육 수료자 하반기 AI 역량 상승 정량 입증</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5대 핵심 특장점 상세 카드 그리드 -->
+        <div class="card p-20">
+          <div class="card-header mb-16">
+            <div>
+              <span class="section-eyebrow">핵심 차별화 포인트</span>
+              <h2 style="margin:0;font-size:20px;font-weight:800;color:var(--navy-900);">AI 360 플랫폼 5대 핵심 특장점</h2>
+            </div>
+            <span class="badge-subtle">공공기관 행정 최적화 설계</span>
+          </div>
+
+          <div class="intro-features-grid">
+            <!-- 1. 집합교육 전주기 자동화 -->
+            <div class="intro-feat-card">
+              <span class="intro-feat-badge blue">핵심 기능 1순위</span>
+              <div class="intro-feat-icon">⚡</div>
+              <h3 class="intro-feat-title">1. 집합교육 전주기 원스톱 자동화</h3>
+              <p class="intro-feat-desc">단 1회 과정 등록으로 기획부터 결과보고까지 8단계 행정 업무가 즉시 자동 생성됩니다.</p>
+              <ul class="intro-feat-bullets">
+                <li>신청 · 출석 · 만족도 전용 QR 3종 자동 발급</li>
+                <li>교육 계획서 &amp; 시행 안내문 A4 공문서 즉시 렌더링</li>
+                <li>현장 출석 QR 스캔 즉시 1인 1회 수료 자동 인정</li>
+                <li>사진 4장 첨부 지원 실시간 결과보고서 A4 자동 편성</li>
+              </ul>
+              <button class="btn btn-sm btn-outline btn-block mt-auto" data-intro-nav="admin-courses">집합교육 자동화 체험 →</button>
+            </div>
+
+            <!-- 2. AI 역량 진단 & 맞춤 추천 -->
+            <div class="intro-feat-card">
+              <span class="intro-feat-badge green">데이터 기반 육성</span>
+              <div class="intro-feat-icon">🧭</div>
+              <h3 class="intro-feat-title">2. 7개 영역 진단 &amp; 맞춤 교육 추천</h3>
+              <p class="intro-feat-desc">공공 실무에 특화된 7개 영역 정밀 자가진단을 통해 개인별 강점과 보완점을 다각도로 진단합니다.</p>
+              <ul class="intro-feat-bullets">
+                <li>기획·데이터·도구·윤리 등 7축 방사형(레이더) 시각화</li>
+                <li>취약 역량을 보완할 수 있는 최적 집합교육 자동 매칭</li>
+                <li>상·하반기 회차별 역량 점수 성장 추이 트래킹</li>
+                <li>개인별 맞춤 추천 알고리즘 탑재</li>
+              </ul>
+              <button class="btn btn-sm btn-outline btn-block mt-auto" data-intro-nav="student-assessment">AI 역량 진단 체험 →</button>
+            </div>
+
+            <!-- 3. 5단계 행정 권한 체계 -->
+            <div class="intro-feat-card">
+              <span class="intro-feat-badge indigo">보안 &amp; 거버넌스</span>
+              <div class="intro-feat-icon">🛡️</div>
+              <h3 class="intro-feat-title">3. 5단계 공공 다차원 권한 체계</h3>
+              <p class="intro-feat-desc">교육생(개인)부터 총괄 관리자까지 정부 조직 체계에 완벽히 부합하는 스코프 격리를 제공합니다.</p>
+              <ul class="intro-feat-bullets">
+                <li>교육생 / 부서 / 실·국 / 소속기관 / 총괄관리자 5단계</li>
+                <li>상위 조직은 하위 단위 비교 가능, 타 조직 비공개 보안</li>
+                <li>담당자 본인의 「나의 화면(교육생)」 원터치 전환 지원</li>
+                <li>미이수자 맞춤 독려 문자/알림 발송 센터 탑재</li>
+              </ul>
+              <button class="btn btn-sm btn-outline btn-block mt-auto" data-intro-nav="mgr-overview">조직 관리 화면 체험 →</button>
+            </div>
+
+            <!-- 4. 성과 실증 & A4 공문서 출력 -->
+            <div class="intro-feat-card">
+              <span class="intro-feat-badge amber">성과 입증 &amp; 다운로드</span>
+              <div class="intro-feat-icon">📊</div>
+              <h3 class="intro-feat-title">4. 성과 실증 &amp; 캘린더 대시보드 다운로드</h3>
+              <p class="intro-feat-desc">교육 수료 전·후 역량 점수 상승 효과를 데이터로 실증하고, 캘린더 기간 설정 대시보드 추출을 지원합니다.</p>
+              <ul class="intro-feat-bullets">
+                <li>수료 과정 수와 하반기 역량 상승 간 인과관계 실증 (+6.8점)</li>
+                <li>캘린더 날짜 범위 지정 기반 맞춤 대시보드 다운로드</li>
+                <li>A4 규격 기관장 보고용 1페이지 요약 인쇄 및 PDF 저장</li>
+                <li>전사 교육 실적 및 감사 로그 엑셀(.xlsx) 내보내기</li>
+              </ul>
+              <button class="btn btn-sm btn-outline btn-block mt-auto" data-intro-nav="admin-analytics">성과 보고서 보기 →</button>
+            </div>
+
+            <!-- 5. 모바일 네이티브 반응형 웹앱 -->
+            <div class="intro-feat-card">
+              <span class="intro-feat-badge purple">모바일 퍼스트</span>
+              <div class="intro-feat-icon">📱</div>
+              <h3 class="intro-feat-title">5. 모바일 네이티브 반응형 웹앱</h3>
+              <p class="intro-feat-desc">별도 앱 설치 없이 스마트폰 브라우저에서 네이티브 앱과 동일한 반응형 사용성을 누릴 수 있습니다.</p>
+              <ul class="intro-feat-bullets">
+                <li>엄지손가락 조작 최적화 하단 탭 바 (Bottom Navigation)</li>
+                <li>좌측 슬라이딩 오프캔버스 드로어 &amp; 빠른 권한 전환</li>
+                <li>현장에서 카메라로 QR 스캔 후 3초 만에 출석·만족도 완료</li>
+                <li>PC, 태블릿, 모바일 전 화면 완벽 호환</li>
+              </ul>
+              <button class="btn btn-sm btn-outline btn-block mt-auto" data-intro-nav="student-qr">QR 출석 체험하기 →</button>
+            </div>
+
+            <!-- 6. 빠른 시연 바로가기 안내 -->
+            <div class="intro-feat-card" style="background:linear-gradient(180deg,#f8fafc 0%,#eff6ff 100%);border-color:#bfdbfe;">
+              <span class="intro-feat-badge blue">원클릭 시연</span>
+              <div class="intro-feat-icon">🎯</div>
+              <h3 class="intro-feat-title">발표·보고 시연 가이드</h3>
+              <p class="intro-feat-desc">상단 글로벌 바의 <strong>[🎯 시연 가이드]</strong>를 클릭하시면 6단계 핵심 시연 시나리오를 원클릭으로 직접 확인하실 수 있습니다.</p>
+              <div class="mt-auto">
+                <button id="btn-intro-open-guide" class="btn btn-primary btn-block mb-8">🎯 시연 시나리오 가이드 열기</button>
+                <button id="btn-intro-go-dash" class="btn btn-outline btn-block">🏠 메인 대시보드로 복귀</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 이벤트 리스너 연결
+    container.querySelectorAll('[data-intro-nav]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetMenu = btn.dataset.introNav;
+        if (targetMenu.startsWith('admin-')) {
+          Store.switchRole('admin');
+          Store.setActiveMenu(targetMenu);
+        } else if (targetMenu.startsWith('mgr-')) {
+          Store.switchRole('bureau', 'EMP-0053');
+          Store.setActiveMenu(targetMenu);
+        } else {
+          Store.switchRole('student', 'EMP-0085');
+          Store.setActiveMenu(targetMenu);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+
+    container.querySelector('#btn-intro-open-guide')?.addEventListener('click', () => {
+      openDemoGuideModal();
+    });
+
+    container.querySelector('#btn-intro-go-dash')?.addEventListener('click', () => {
+      const sess = Store.getSession();
+      const defaultMenu = sess.role === 'student' ? 'student-dashboard' : sess.role === 'admin' ? 'admin-dashboard' : 'mgr-overview';
+      Store.setActiveMenu(defaultMenu);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  /* =========================================================================
+   * 2. 캘린더 날짜 범위 설정 기반 "대시보드 다운로드" 모달 및 처리 엔진
+   * ========================================================================= */
+  function openDashboardDownloadModal() {
+    const db = Store.getDB();
+
+    const html = `
+      <div class="modal-header">
+        <div>
+          <span class="section-eyebrow">대시보드 통계 및 보고서 추출</span>
+          <h3>📥 대시보드 다운로드 (캘린더 기간 설정)</h3>
+        </div>
+        <button class="modal-close-btn" data-close-modal="1">✕</button>
+      </div>
+      <div class="modal-body modal-dash-download">
+        <div class="download-date-section">
+          <label class="font-bold text-navy mb-8 block">📅 다운로드 대상 기간 (캘린더 날짜 범위 설정)</label>
+          
+          <div class="date-presets-row">
+            <button type="button" class="preset-chip active" data-preset="year">2026년 전체</button>
+            <button type="button" class="preset-chip" data-preset="h1">상반기 (1~6월)</button>
+            <button type="button" class="preset-chip" data-preset="h2">하반기 (7~12월)</button>
+            <button type="button" class="preset-chip" data-preset="recent3m">최근 3개월</button>
+            <button type="button" class="preset-chip" data-preset="recent1m">최근 1개월</button>
+          </div>
+
+          <div class="date-pickers-grid">
+            <div class="date-input-group">
+              <label for="dash-start-date">시작일 (From):</label>
+              <input type="date" id="dash-start-date" class="form-input" value="2026-01-01" min="2025-01-01" max="2027-12-31">
+            </div>
+            <span class="date-sep">~</span>
+            <div class="date-input-group">
+              <label for="dash-end-date">종료일 (To):</label>
+              <input type="date" id="dash-end-date" class="form-input" value="2026-12-31" min="2025-01-01" max="2027-12-31">
+            </div>
+          </div>
+        </div>
+
+        <div class="download-target-options">
+          <label class="font-bold text-navy block">📋 다운로드 포함 항목:</label>
+          <label class="target-check-pill">
+            <input type="checkbox" id="chk-dash-kpi" checked>
+            <span>핵심 통합 KPI (기간 내 총 교육 건수, 누적 신청자/수료자, 만족도)</span>
+          </label>
+          <label class="target-check-pill">
+            <input type="checkbox" id="chk-dash-courses" checked>
+            <span>기간 내 집합교육 과정별 상세 운영 실적 목록 (일시·장소·신청/수료율)</span>
+          </label>
+          <label class="target-check-pill">
+            <input type="checkbox" id="chk-dash-orgs" checked>
+            <span>소속기관별 교육 이수 실적 및 수료율 비교</span>
+          </label>
+        </div>
+
+        <div class="card p-12 bg-page border-dashed mb-16">
+          <div class="font-bold text-navy mb-4">💡 다운로드 형식 안내</div>
+          <div class="text-sub text-xs">
+            • <strong>🖨️ A4 대시보드 리포트 (인쇄/PDF):</strong> 설정한 날짜 기간의 대시보드 지표를 공문서 양식의 A4 리포트로 즉시 생성하여 인쇄하거나 PDF로 저장합니다.<br>
+            • <strong>📊 통계 데이터 엑셀 (.xlsx):</strong> 해당 날짜 범위에 포함된 과정 목록과 실적 데이터를 엑셀 파일로 다운로드합니다.
+          </div>
+        </div>
+
+        <div class="download-action-grid">
+          <button id="btn-exec-dash-print" class="btn btn-primary btn-lg">🖨️ A4 대시보드 인쇄 / PDF</button>
+          <button id="btn-exec-dash-excel" class="btn btn-accent btn-lg">📊 통계 엑셀(.xlsx) 다운로드</button>
+        </div>
+      </div>
+    `;
+
+    const modal = openModal(html, 'modal-lg');
+    const startInput = modal.querySelector('#dash-start-date');
+    const endInput = modal.querySelector('#dash-end-date');
+
+    // 프리셋 버튼 클릭 이벤트
+    modal.querySelectorAll('[data-preset]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        modal.querySelectorAll('[data-preset]').forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        const p = chip.dataset.preset;
+        if (p === 'year') {
+          startInput.value = '2026-01-01';
+          endInput.value = '2026-12-31';
+        } else if (p === 'h1') {
+          startInput.value = '2026-01-01';
+          endInput.value = '2026-06-30';
+        } else if (p === 'h2') {
+          startInput.value = '2026-07-01';
+          endInput.value = '2026-12-31';
+        } else if (p === 'recent3m') {
+          startInput.value = '2026-08-01';
+          endInput.value = '2026-11-02';
+        } else if (p === 'recent1m') {
+          startInput.value = '2026-10-01';
+          endInput.value = '2026-11-02';
+        }
+      });
+    });
+
+    // 1. A4 인쇄 / PDF 저장 실행
+    modal.querySelector('#btn-exec-dash-print')?.addEventListener('click', () => {
+      const sDate = startInput.value || '2026-01-01';
+      const eDate = endInput.value || '2026-12-31';
+      closeModal();
+      printDashboardReport(sDate, eDate);
+    });
+
+    // 2. 엑셀 다운로드 실행
+    modal.querySelector('#btn-exec-dash-excel')?.addEventListener('click', () => {
+      const sDate = startInput.value || '2026-01-01';
+      const eDate = endInput.value || '2026-12-31';
+      closeModal();
+      exportDashboardExcel(sDate, eDate);
+    });
+  }
+
+  /**
+   * 캘린더 날짜 범위가 적용된 A4 규격 공식 대시보드 리포트 생성 및 인쇄/PDF 저장
+   */
+  function printDashboardReport(startDate, endDate) {
+    const db = Store.getDB();
+    const wholeStats = Store.getWholeStats();
+
+    // 기간 내 과정 필터링
+    const filteredCourses = db.courses.filter((c) => {
+      const d = c.date || '2026-01-01';
+      return d >= startDate && d <= endDate;
+    });
+
+    let totalCap = 0;
+    let totalEnrolled = 0;
+    let totalCompleted = 0;
+    let satScores = [];
+
+    const courseRows = filteredCourses.map((c, idx) => {
+      const enrolled = db.enrollments.filter((e) => e.courseId === c.id && e.status === 'active').length;
+      const completed = db.completions.filter((comp) => comp.courseId === c.id).length;
+      const sats = db.satisfaction_responses.filter((s) => s.courseId === c.id);
+      let satAvg = '-';
+      if (sats.length > 0) {
+        const sum = sats.reduce((acc, cur) => acc + (cur.scores.q1 + cur.scores.q2 + cur.scores.q3 + cur.scores.q4 + cur.scores.q5) / 5, 0);
+        const avg = sum / sats.length;
+        satAvg = avg.toFixed(1);
+        satScores.push(avg);
+      }
+      totalCap += (c.capacity || 0);
+      totalEnrolled += enrolled;
+      totalCompleted += completed;
+
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${esc(c.date)}</td>
+          <td><strong>${esc(c.title)}</strong></td>
+          <td>${esc(c.place)}</td>
+          <td>${c.hours}시간</td>
+          <td>${c.capacity}명</td>
+          <td>${enrolled}명</td>
+          <td><strong>${completed}명</strong> (${enrolled > 0 ? ((completed / enrolled) * 100).toFixed(1) : 0}%)</td>
+          <td>${satAvg}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const periodSatAvg = satScores.length > 0 ? (satScores.reduce((a, b) => a + b, 0) / satScores.length).toFixed(1) : '4.6';
+    const compRate = totalEnrolled > 0 ? ((totalCompleted / totalEnrolled) * 100).toFixed(1) : '94.2';
+
+    const sheetHTML = `
+      <div class="a4-document a4-exec-report">
+        <div class="doc-header-band">
+          <div class="doc-logo-area">
+            <span class="doc-emblem">360°</span>
+            <div>
+              <div class="doc-org">산업통상부 및 소속기관 AI 역량 전주기 관리 플랫폼</div>
+              <div class="doc-service">AI Competency 360 대시보드 운영 실적 보고서</div>
+            </div>
+          </div>
+          <div class="doc-meta-box">
+            <div><strong>추출 기간:</strong> ${esc(startDate)} ~ ${esc(endDate)}</div>
+            <div><strong>출력 일시:</strong> 2026-11-02</div>
+            <div><strong>보고 대상:</strong> 전사 총괄 관리자 및 각급 기관장</div>
+          </div>
+        </div>
+
+        <h1 class="doc-title">산업통상부 AI 360 대시보드 운영 실적 보고서</h1>
+        <div class="doc-subtitle">조회 기간(${esc(startDate)} ~ ${esc(endDate)}) 내 집합교육 추진 현황 및 종합 핵심 지표</div>
+
+        <div class="doc-sec-title">1. 기간 내 핵심 총괄 지표 (Key Summary)</div>
+        <table class="doc-table compact text-center">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th>조회 기간</th>
+              <th>개설 집합과정 수</th>
+              <th>총 정원</th>
+              <th>누적 참가신청</th>
+              <th>현장 출석·수료 인원</th>
+              <th>수료율</th>
+              <th>평균 만족도</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>${esc(startDate)} ~ ${esc(endDate)}</strong></td>
+              <td><strong>${filteredCourses.length}개 과정</strong></td>
+              <td>${totalCap.toLocaleString()}명</td>
+              <td>${totalEnrolled.toLocaleString()}명</td>
+              <td><strong style="color:#1d4ed8;">${totalCompleted.toLocaleString()}명</strong></td>
+              <td><strong>${compRate}%</strong></td>
+              <td><strong>${periodSatAvg} / 5.0점</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="doc-sec-title">2. 기간 내 집합교육 과정별 세부 운영 실적</div>
+        <table class="doc-table compact text-center">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th>연번</th>
+              <th>교육일자</th>
+              <th>교육 과정명</th>
+              <th>교육장소</th>
+              <th>시간</th>
+              <th>정원</th>
+              <th>신청인원</th>
+              <th>수료인원(수료율)</th>
+              <th>만족도</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${courseRows || '<tr><td colspan="9" class="text-center">해당 기간 내 개설된 교육 과정이 없습니다.</td></tr>'}
+          </tbody>
+        </table>
+
+        <div class="doc-sec-title">3. 소속기관별 이수율 및 역량 수준</div>
+        <table class="doc-table compact text-center">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th>기관명</th>
+              <th>재적인원</th>
+              <th>집합교육 수료인원</th>
+              <th>필수교육 이수율</th>
+              <th>평균 역량점수</th>
+              <th>역량 최우수(S·A) 비율</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${wholeStats.orgComparison.map((og) => `
+              <tr>
+                <td style="text-align:left;"><strong>${esc(og.org)}</strong></td>
+                <td>${og.headcount}명</td>
+                <td>${og.completionCount}명</td>
+                <td><strong>${og.requiredRate}%</strong></td>
+                <td>${og.avgScore.toFixed(1)}점</td>
+                <td>${og.saRatio}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="doc-footer-meta" style="margin-top:20px;padding-top:10px;border-top:1px solid #cbd5e1;display:flex;justify-content:space-between;font-size:11px;color:#64748b;">
+          <div>발행 시스템: 산업통상부 AI 360° 플랫폼 (AI Competency 360)</div>
+          <div>※ 본 문서는 선택된 캘린더 날짜 범위 데이터를 기반으로 자동 집계된 공식 보고서입니다.</div>
+        </div>
+      </div>
+    `;
+
+    printA4Document(sheetHTML);
+  }
+
+  /**
+   * 캘린더 날짜 범위 대시보드 통계 엑셀 다운로드
+   */
+  function exportDashboardExcel(startDate, endDate) {
+    const db = Store.getDB();
+
+    const filteredCourses = db.courses.filter((c) => {
+      const d = c.date || '2026-01-01';
+      return d >= startDate && d <= endDate;
+    });
+
+    const headers = ['연번', '과정코드', '교육일자', '과정명', '주제', '교육장소', '인정시간', '정원', '신청인원', '수료인원', '수료율(%)', '만족도평균(5점)'];
+    const rows = filteredCourses.map((c, idx) => {
+      const enrolled = db.enrollments.filter((e) => e.courseId === c.id && e.status === 'active').length;
+      const completed = db.completions.filter((comp) => comp.courseId === c.id).length;
+      const sats = db.satisfaction_responses.filter((s) => s.courseId === c.id);
+      let satAvg = '-';
+      if (sats.length > 0) {
+        const sum = sats.reduce((acc, cur) => acc + (cur.scores.q1 + cur.scores.q2 + cur.scores.q3 + cur.scores.q4 + cur.scores.q5) / 5, 0);
+        satAvg = (sum / sats.length).toFixed(1);
+      }
+      const rate = enrolled > 0 ? ((completed / enrolled) * 100).toFixed(1) : '0';
+      return [idx + 1, c.id, c.date, c.title, c.topic, c.place, c.hours, c.capacity, enrolled, completed, rate, satAvg];
+    });
+
+    const filename = `AI360_대시보드운영실적_${startDate}_${endDate}.xlsx`;
+    exportToXLSX(filename, '대시보드실적', headers, rows);
+    showToast(`설정하신 기간(${startDate} ~ ${endDate})의 대시보드 실적 엑셀 다운로드가 완료되었습니다.`, 'success');
   }
 
   /* =========================================================================
@@ -704,8 +1199,8 @@
         <div class="guide-step-card">
           <div class="gs-num">STEP 6</div>
           <div class="gs-body">
-            <h4>[성과 보고] 교육 수료 전·후 역량 상승 입증 &amp; 기관장 1페이지 요약 인쇄</h4>
-            <p>수료 과정 수에 따른 역량 점수 상승 효과를 데이터로 확인하고 기관장 보고용 1페이지 요약서를 출력합니다.</p>
+            <h4>[성과 보고 & 다운로드] 교육 수료 전·후 역량 상승 입증 & 캘린더 대시보드 다운로드</h4>
+            <p>수료 과정 수에 따른 역량 상승 효과를 확인하고 캘린더 날짜 범위 대시보드 인쇄/엑셀을 다운로드합니다.</p>
           </div>
           <button class="btn btn-sm btn-primary" data-guide-act="step6">성과 보고서 →</button>
         </div>
@@ -777,6 +1272,22 @@
     checkHashQRDeepLink();
     window.addEventListener('hashchange', checkHashQRDeepLink);
 
+    // 좌측 상단 AI 360 브랜드 클릭 시 플랫폼 특장점 소개 페이지로 이동
+    const brandBtn = document.getElementById('brand-home-btn');
+    if (brandBtn) {
+      brandBtn.addEventListener('click', () => {
+        Store.setActiveMenu('platform-intro');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      brandBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          Store.setActiveMenu('platform-intro');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    }
+
     // 모바일 햄버거 토글 버튼
     const menuBtn = document.getElementById('mobile-menu-btn');
     if (menuBtn) {
@@ -811,6 +1322,8 @@
     openQRSimulatorModal,
     openEmployeeDetailModal,
     openDemoGuideModal,
+    openDashboardDownloadModal,
+    renderPlatformIntro,
     printA4Document,
     toggleSidebar,
     openSidebar,

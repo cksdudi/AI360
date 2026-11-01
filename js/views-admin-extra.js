@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AI 360 — 총괄 관리자 화면 Part 2
  * ③ 역량 진단 회차 관리 · ④ 명단 관리 · ⑤ 담당자 지정 · ⑥ 성과 분석 및 기관장 1페이지 보고
  */
@@ -697,7 +697,8 @@
         </div>
         <div class="head-actions">
           <button id="btn-dl-perf-excel" class="btn btn-outline">📥 전사 성과 분석 엑셀 다운로드</button>
-          <button id="btn-print-exec-report" class="btn btn-primary btn-lg">🖨️ 기관장 보고용 1페이지 요약 인쇄 / PDF</button>
+          <button id="btn-print-exec-report" class="btn btn-primary btn-lg">🖨️ 기관장 1페이지 요약 인쇄 / PDF</button>
+          <button id="btn-open-dash-download" class="btn btn-accent btn-lg">📥 대시보드 다운로드 (기간 설정)</button>
         </div>
       </div>
 
@@ -731,7 +732,7 @@
       <div class="card mb-16">
         <div class="card-header">
           <h3>📄 기관장 보고용 1페이지 요약 보고서 미리보기 (A4 규격)</h3>
-          <button id="btn-print-exec-report-2" class="btn btn-sm btn-primary">🖨️ A4 인쇄 / PDF 저장</button>
+          <div class="btn-row"><button id="btn-print-exec-report-2" class="btn btn-sm btn-primary">🖨️ A4 인쇄 / PDF</button><button id="btn-open-dash-download-2" class="btn btn-sm btn-accent">📥 대시보드 다운로드</button></div>
         </div>
         <div class="a4-preview-wrapper wide">
           ${execReportHTML}
@@ -767,6 +768,9 @@
     const doPrintExec = () => window.AI360App.printA4Document(execReportHTML);
     container.querySelector('#btn-print-exec-report')?.addEventListener('click', doPrintExec);
     container.querySelector('#btn-print-exec-report-2')?.addEventListener('click', doPrintExec);
+    const doOpenDashDl = () => window.AI360App.openDashboardDownloadModal();
+    container.querySelector('#btn-open-dash-download')?.addEventListener('click', doOpenDashDl);
+    container.querySelector('#btn-open-dash-download-2')?.addEventListener('click', doOpenDashDl);
 
     container.querySelector('#btn-dl-perf-excel')?.addEventListener('click', () => {
       const rows = [
