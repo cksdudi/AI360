@@ -684,7 +684,7 @@
   function renderCourseRosterTableHTML(summary, attendedMap) {
     if (rosterSubTab === 'enrolled') {
       if (!summary.enrollList.length) return '<div class="empty-hint">신청자가 없습니다.</div>';
-      return `<table class="data-table">
+      return `<div class="table-wrap"><table class="data-table">
         <thead><tr><th>연번</th><th>소속기관</th><th>실·국 / 부서</th><th>직급</th><th>이름</th><th>신청경로</th><th>신청일시</th><th>출석상태</th></tr></thead>
         <tbody>
           ${summary.enrollList.map((en, i) => {
@@ -699,12 +699,12 @@
             </tr>`;
           }).join('')}
         </tbody>
-      </table>`;
+      </table></div>`;
     }
 
     if (rosterSubTab === 'completed') {
       if (!summary.attendList.length) return '<div class="empty-hint">아직 출석·수료 인증자가 없습니다.</div>';
-      return `<table class="data-table">
+      return `<div class="table-wrap"><table class="data-table">
         <thead><tr><th>연번</th><th>소속기관</th><th>실·국 / 부서</th><th>직급</th><th>이름</th><th>인증방식</th><th>인증시각</th><th>수동처리 사유</th></tr></thead>
         <tbody>
           ${summary.attendList.map((att, i) => {
@@ -718,12 +718,12 @@
             </tr>`;
           }).join('')}
         </tbody>
-      </table>`;
+      </table></div>`;
     }
 
     if (rosterSubTab === 'absent') {
       if (!summary.absentAfterApplyList.length) return '<div class="empty-hint">신청 후 미출석 인원이 없습니다.</div>';
-      return `<table class="data-table">
+      return `<div class="table-wrap"><table class="data-table">
         <thead><tr><th>연번</th><th>소속기관</th><th>부서</th><th>직급</th><th>이름</th><th>신청일시</th><th>관리자 수동 수료 보정 (사유 입력)</th></tr></thead>
         <tbody>
           ${summary.absentAfterApplyList.map(({ enrollment, emp }, i) => `
@@ -739,11 +739,11 @@
             </tr>
           `).join('')}
         </tbody>
-      </table>`;
+      </table></div>`;
     }
 
     // unapplied
-    return `<table class="data-table">
+    return `<div class="table-wrap"><table class="data-table">
       <thead><tr><th>연번</th><th>소속기관</th><th>실·국</th><th>부서</th><th>직급</th><th>이름</th></tr></thead>
       <tbody>
         ${summary.unappliedList.slice(0, 100).map((emp, i) => `
@@ -753,7 +753,7 @@
           </tr>
         `).join('')}
       </tbody>
-    </table>`;
+    </table></div>`;
   }
 
   /* =========================================================================

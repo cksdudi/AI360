@@ -2,17 +2,33 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#09192b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AI 360">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
   <title>AI 360 — 산업통상부 AI 역량 전주기 관리 플랫폼 (보고·시연용 프로토타입)</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/print.css">
 </head>
 <body>
-  <!-- 상단 글로벌 헤더 (5단계 시연 사용자 전환 · 나의화면/관리화면 토글 · 샘플 데이터 초기화) -->
+  <!-- 모바일 사이드바 배경 오버레이 -->
+  <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
+  <!-- 상단 글로벌 헤더 (모바일 반응형 햄버거 토글 · 시연 사용자 전환 · 나의화면/관리화면 토글 · 초기화) -->
   <header class="global-header">
     <div class="header-inner">
       <div class="brand-area">
+        <!-- 모바일 햄버거 메뉴 버튼 -->
+        <button id="mobile-menu-btn" class="mobile-nav-toggle" aria-label="모바일 메뉴 열기" title="모바일 메뉴 열기">
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </button>
+
         <div class="brand-emblem" aria-hidden="true">360°</div>
         <div class="brand-titles">
           <div class="brand-org-row">
@@ -42,7 +58,7 @@
         <!-- 현재 선택된 권한 및 메뉴 화면 렌더링 -->
       </div>
 
-      <footer style="margin-top:28px;padding-top:14px;border-top:1px solid #dde5f0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:#64748b;">
+      <footer class="app-footer">
         <div>
           <strong>AI 360 (AI Competency 360)</strong> — 산업통상부 및 소속기관 AI 역량 전주기 관리 플랫폼 (시연용 프로토타입 v3)
         </div>
@@ -52,6 +68,11 @@
       </footer>
     </main>
   </div>
+
+  <!-- 모바일 하단 네이티브 스타일 탭바 (스마트폰 환경 최적화) -->
+  <nav id="app-bottom-nav" class="app-bottom-nav" aria-label="모바일 주 내비게이션">
+    <!-- js/app.js 에서 동적 렌더링 -->
+  </nav>
 
   <!-- A4 공문서/보고서/QR게시물 인쇄 전용 루트 -->
   <div id="a4-print-root"></div>
@@ -72,4 +93,3 @@
   <script src="js/app.js"></script>
 </body>
 </html>
-
