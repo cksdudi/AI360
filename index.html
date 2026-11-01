@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 360 — 산업통상부 AI 역량 전주기 관리 플랫폼 (보고·시연용 프로토타입)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/print.css">
+</head>
+<body>
+  <!-- 상단 글로벌 헤더 (5단계 시연 사용자 전환 · 나의화면/관리화면 토글 · 샘플 데이터 초기화) -->
+  <header class="global-header">
+    <div class="header-inner">
+      <div class="brand-area">
+        <div class="brand-emblem" aria-hidden="true">360°</div>
+        <div class="brand-titles">
+          <div class="brand-org-row">
+            <span>산업통상부 · AI Competency 360</span>
+          </div>
+          <div class="brand-main-row">
+            <span class="brand-name">AI 360</span>
+            <span class="brand-slogan">AI 역량의 시작부터 성장까지, AI 360°</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="header-controls-mount" class="header-controls">
+        <!-- js/app.js 에서 동적 렌더링 -->
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 앱 셸 -->
+  <div class="app-shell">
+    <aside id="app-sidebar" class="app-sidebar" aria-label="권한별 주 메뉴">
+      <!-- js/app.js 에서 동적 렌더링 -->
+    </aside>
+
+    <main class="app-main">
+      <div id="app-main-view">
+        <!-- 현재 선택된 권한 및 메뉴 화면 렌더링 -->
+      </div>
+
+      <footer style="margin-top:28px;padding-top:14px;border-top:1px solid #dde5f0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;color:#64748b;">
+        <div>
+          <strong>AI 360 (AI Competency 360)</strong> — 산업통상부 및 소속기관 AI 역량 전주기 관리 플랫폼 (시연용 프로토타입 v3)
+        </div>
+        <div>
+          ※ 본 웹사이트의 인원(1,000명), 교육 실적, 만족도, 진단 점수는 <strong>고정 시드 기반 시연용 가상 샘플 데이터</strong>이며 실제 행정 실적과 무관합니다.
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- A4 공문서/보고서/QR게시물 인쇄 전용 루트 -->
+  <div id="a4-print-root"></div>
+
+  <!-- SheetJS (온라인 시 활용, 오프라인 시 js/utils.js 내장 XLSX 입출력 엔진 자동 동작) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- 애플리케이션 스크립트 (순서 보장, 별도 빌드/서버 없이 file:// 및 웹서버 모두 즉시 실행 가능) -->
+  <script src="js/employees-data.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/seed.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/views-student.js"></script>
+  <script src="js/views-manager.js"></script>
+  <script src="js/views-admin.js"></script>
+  <script src="js/views-admin-extra.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
+
