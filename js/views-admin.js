@@ -254,6 +254,9 @@
     container.querySelector('#btn-dash-new-course')?.addEventListener('click', () => {
       openCourseRegisterModal();
     });
+    container.querySelector('#btn-dash-download')?.addEventListener('click', () => {
+      window.AI360App.openReportDownloadModal('dashboard');
+    });
     container.querySelectorAll('[data-admin-go]').forEach((b) => {
       b.addEventListener('click', () => Store.setActiveMenu(b.dataset.adminGo));
     });

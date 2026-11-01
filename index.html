@@ -80,8 +80,9 @@
   <!-- A4 공문서/보고서/QR게시물 인쇄 전용 루트 -->
   <div id="a4-print-root"></div>
 
-  <!-- SheetJS (온라인 시 활용, 오프라인 시 js/utils.js 내장 XLSX 입출력 엔진 자동 동작) -->
+  <!-- SheetJS & html2pdf (엑셀 입출력 및 공식 PDF 직접 다운로드 엔진) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- 애플리케이션 스크립트 (순서 보장, 별도 빌드/서버 없이 file:// 및 웹서버 모두 즉시 실행 가능) -->
   <script src="js/employees-data.js"></script>

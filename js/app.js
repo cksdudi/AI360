@@ -2,7 +2,9 @@
  * AI 360 — 메인 애플리케이션 컨트롤러
  * 1. 상단 글로벌 바 (5단계 시연 사용자 전환, 나의 화면 ↔ 관리 화면 전환, 샘플 데이터 초기화, 발표 시연 가이드)
  * 2. 좌측 상단 AI 360 클릭 시 "플랫폼 특장점 소개 페이지"
- * 3. 캘린더 날짜 범위 설정 기반 "대시보드 다운로드" (A4 인쇄/PDF 및 통계 엑셀 다운로드)
+ * 3. 캘린더 날짜 범위 설정 기반 "대시보드 & 기관장 1페이지 보고서 PDF 다운로드" 엔진
+ *    - PDF 파일 직접 다운로드 (html2pdf) 및 A4 인쇄 지원
+ *    - 기관장 보고서 엄격한 A4 단 1장 규격 (2페이지 초과 방지 및 요약)
  * 4. 모바일 반응형 사이드 드로어 및 하단 탭 바 (Bottom Navigation Bar)
  * 5. 모바일 QR 스캔 시뮬레이터 모달, 구성원 드릴다운 모달, A4 공문서 인쇄 제어
  */
@@ -477,10 +479,10 @@
               <span class="intro-feat-badge amber">성과 입증 &amp; 다운로드</span>
               <div class="intro-feat-icon">📊</div>
               <h3 class="intro-feat-title">4. 성과 실증 &amp; 캘린더 대시보드 다운로드</h3>
-              <p class="intro-feat-desc">교육 수료 전·후 역량 점수 상승 효과를 데이터로 실증하고, 캘린더 기간 설정 대시보드 추출을 지원합니다.</p>
+              <p class="intro-feat-desc">교육 수료 전·후 역량 점수 상승 효과를 데이터로 실증하고, 캘린더 기간 설정 대시보드 및 기관장 보고서 PDF 다운로드를 지원합니다.</p>
               <ul class="intro-feat-bullets">
                 <li>수료 과정 수와 하반기 역량 상승 간 인과관계 실증 (+6.8점)</li>
-                <li>캘린더 날짜 범위 지정 기반 맞춤 대시보드 다운로드</li>
+                <li>캘린더 날짜 범위 지정 기반 맞춤 PDF 직접 다운로드</li>
                 <li>A4 규격 기관장 보고용 1페이지 요약 인쇄 및 PDF 저장</li>
                 <li>전사 교육 실적 및 감사 로그 엑셀(.xlsx) 내보내기</li>
               </ul>
@@ -549,20 +551,84 @@
   }
 
   /* =========================================================================
-   * 2. 캘린더 날짜 범위 설정 기반 "대시보드 다운로드" 모달 및 처리 엔진
+   * 2. PDF 다운로드 엔진 (html2pdf 라이브러리 연동 및 인쇄 백업 지원)
    * ========================================================================= */
-  function openDashboardDownloadModal() {
+  function downloadHTMLAsPDF(htmlContent, filename) {
+    showToast('PDF 파일 생성 중입니다. 잠시만 기다려주세요...', 'info');
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-9999px';
+    wrapper.style.top = '0';
+    wrapper.style.width = '210mm';
+    wrapper.style.backgroundColor = '#ffffff';
+    wrapper.innerHTML = htmlContent;
+    document.body.appendChild(wrapper);
+
+    // html2pdf 라이브러리 활용
+    if (window.html2pdf) {
+      const opt = {
+        margin: [4, 4, 4, 4],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      window.html2pdf().set(opt).from(wrapper).save().then(() => {
+        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+        showToast(`「${filename}」 파일 다운로드가 완료되었습니다.`, 'success');
+      }).catch((err) => {
+        console.warn('html2pdf fallback to window.print', err);
+        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+        printA4Document(htmlContent);
+      });
+    } else {
+      // 라이브러리 부재 시 브라우저 인쇄(PDF로 저장)로 안전하게 연결
+      if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+      printA4Document(htmlContent);
+      showToast('브라우저 인쇄 대화상자에서 [PDF로 저장]을 선택하세요.', 'info');
+    }
+  }
+
+  /* =========================================================================
+   * 3. 캘린더 날짜 범위 설정 기반 통합 다운로드 모달 (대시보드 & 기관장 1페이지 보고서)
+   * ========================================================================= */
+  function openReportDownloadModal(initialReportType = 'dashboard') {
     const db = Store.getDB();
 
     const html = `
       <div class="modal-header">
         <div>
-          <span class="section-eyebrow">대시보드 통계 및 보고서 추출</span>
-          <h3>📥 대시보드 다운로드 (캘린더 기간 설정)</h3>
+          <span class="section-eyebrow">날짜 지정 보고서 및 대시보드 PDF 추출</span>
+          <h3>📥 대시보드 &amp; 보고서 다운로드 (캘린더 기간 설정)</h3>
         </div>
         <button class="modal-close-btn" data-close-modal="1">✕</button>
       </div>
       <div class="modal-body modal-dash-download">
+        
+        <!-- 보고서 유형 선택 -->
+        <div class="mb-14">
+          <label class="font-bold text-navy block mb-6">📑 다운로드 대상 보고서 선택:</label>
+          <div class="form-grid-2">
+            <label class="target-check-pill ${initialReportType === 'dashboard' ? 'active' : ''}" style="cursor:pointer;">
+              <input type="radio" name="report_type_sel" value="dashboard" ${initialReportType === 'dashboard' ? 'checked' : ''}>
+              <div>
+                <strong>📊 AI 360 운영 대시보드 리포트</strong>
+                <div class="text-sub text-xs">기간 내 개설 집합교육 과정 목록 및 종합 실적</div>
+              </div>
+            </label>
+            <label class="target-check-pill ${initialReportType === 'exec' ? 'active' : ''}" style="cursor:pointer;">
+              <input type="radio" name="report_type_sel" value="exec" ${initialReportType === 'exec' ? 'checked' : ''}>
+              <div>
+                <strong>📄 기관장 보고용 1페이지 요약서</strong>
+                <div class="text-sub text-xs">A4 단 1장 엄격 준수 (2페이지 초과 방지 압축)</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 캘린더 날짜 범위 설정 섹션 -->
         <div class="download-date-section">
           <label class="font-bold text-navy mb-8 block">📅 다운로드 대상 기간 (캘린더 날짜 범위 설정)</label>
           
@@ -587,33 +653,24 @@
           </div>
         </div>
 
-        <div class="download-target-options">
-          <label class="font-bold text-navy block">📋 다운로드 포함 항목:</label>
-          <label class="target-check-pill">
-            <input type="checkbox" id="chk-dash-kpi" checked>
-            <span>핵심 통합 KPI (기간 내 총 교육 건수, 누적 신청자/수료자, 만족도)</span>
-          </label>
-          <label class="target-check-pill">
-            <input type="checkbox" id="chk-dash-courses" checked>
-            <span>기간 내 집합교육 과정별 상세 운영 실적 목록 (일시·장소·신청/수료율)</span>
-          </label>
-          <label class="target-check-pill">
-            <input type="checkbox" id="chk-dash-orgs" checked>
-            <span>소속기관별 교육 이수 실적 및 수료율 비교</span>
-          </label>
-        </div>
-
         <div class="card p-12 bg-page border-dashed mb-16">
-          <div class="font-bold text-navy mb-4">💡 다운로드 형식 안내</div>
+          <div class="font-bold text-navy mb-4">💡 다운로드 안내</div>
           <div class="text-sub text-xs">
-            • <strong>🖨️ A4 대시보드 리포트 (인쇄/PDF):</strong> 설정한 날짜 기간의 대시보드 지표를 공문서 양식의 A4 리포트로 즉시 생성하여 인쇄하거나 PDF로 저장합니다.<br>
-            • <strong>📊 통계 데이터 엑셀 (.xlsx):</strong> 해당 날짜 범위에 포함된 과정 목록과 실적 데이터를 엑셀 파일로 다운로드합니다.
+            • <strong>📥 PDF 다운로드:</strong> 설정한 날짜 기간 데이터가 자동 계산 반영된 PDF 파일이 브라우저 다운로드 폴더로 즉시 저장됩니다.<br>
+            • <strong>기관장 보고서:</strong> A4 1페이지 규격을 초과하지 않도록 핵심 지표 위주로 정밀 요약 편성됩니다.
           </div>
         </div>
 
         <div class="download-action-grid">
-          <button id="btn-exec-dash-print" class="btn btn-primary btn-lg">🖨️ A4 대시보드 인쇄 / PDF</button>
-          <button id="btn-exec-dash-excel" class="btn btn-accent btn-lg">📊 통계 엑셀(.xlsx) 다운로드</button>
+          <button id="btn-exec-pdf-dl" class="btn btn-primary btn-lg" style="font-weight:800;">
+            📥 PDF 파일 다운로드 (.pdf)
+          </button>
+          <button id="btn-exec-dash-print" class="btn btn-outline btn-lg">
+            🖨️ A4 인쇄 / 브라우저 저장
+          </button>
+          <button id="btn-exec-dash-excel" class="btn btn-accent btn-lg" style="grid-column: span 2;">
+            📊 통계 엑셀(.xlsx) 파일 다운로드
+          </button>
         </div>
       </div>
     `;
@@ -621,6 +678,14 @@
     const modal = openModal(html, 'modal-lg');
     const startInput = modal.querySelector('#dash-start-date');
     const endInput = modal.querySelector('#dash-end-date');
+
+    // 라디오 클릭 스타일
+    modal.querySelectorAll('input[name="report_type_sel"]').forEach((r) => {
+      r.addEventListener('change', () => {
+        modal.querySelectorAll('.target-check-pill').forEach((p) => p.classList.remove('active'));
+        r.closest('.target-check-pill').classList.add('active');
+      });
+    });
 
     // 프리셋 버튼 클릭 이벤트
     modal.querySelectorAll('[data-preset]').forEach((chip) => {
@@ -647,15 +712,42 @@
       });
     });
 
-    // 1. A4 인쇄 / PDF 저장 실행
+    const getSelectedType = () => {
+      const sel = modal.querySelector('input[name="report_type_sel"]:checked');
+      return sel ? sel.value : 'dashboard';
+    };
+
+    // 1. PDF 파일 직접 다운로드
+    modal.querySelector('#btn-exec-pdf-dl')?.addEventListener('click', () => {
+      const sDate = startInput.value || '2026-01-01';
+      const eDate = endInput.value || '2026-12-31';
+      const type = getSelectedType();
+      closeModal();
+
+      if (type === 'exec') {
+        const html = buildExecutiveOnePageHTML(sDate, eDate);
+        downloadHTMLAsPDF(html, `AI360_기관장_1페이지_보고서_${sDate}_${eDate}.pdf`);
+      } else {
+        const html = buildDashboardReportHTML(sDate, eDate);
+        downloadHTMLAsPDF(html, `AI360_대시보드_보고서_${sDate}_${eDate}.pdf`);
+      }
+    });
+
+    // 2. A4 인쇄 / 브라우저 저장 창
     modal.querySelector('#btn-exec-dash-print')?.addEventListener('click', () => {
       const sDate = startInput.value || '2026-01-01';
       const eDate = endInput.value || '2026-12-31';
+      const type = getSelectedType();
       closeModal();
-      printDashboardReport(sDate, eDate);
+
+      if (type === 'exec') {
+        printA4Document(buildExecutiveOnePageHTML(sDate, eDate));
+      } else {
+        printA4Document(buildDashboardReportHTML(sDate, eDate));
+      }
     });
 
-    // 2. 엑셀 다운로드 실행
+    // 3. 엑셀 다운로드 실행
     modal.querySelector('#btn-exec-dash-excel')?.addEventListener('click', () => {
       const sDate = startInput.value || '2026-01-01';
       const eDate = endInput.value || '2026-12-31';
@@ -665,13 +757,183 @@
   }
 
   /**
-   * 캘린더 날짜 범위가 적용된 A4 규격 공식 대시보드 리포트 생성 및 인쇄/PDF 저장
+   * 기관장 보고용 1페이지 요약 보고서 (엄격한 A4 단 1장 규격 / 날짜 범위 필터링)
    */
-  function printDashboardReport(startDate, endDate) {
+  function buildExecutiveOnePageHTML(startDate = '2026-01-01', endDate = '2026-12-31') {
     const db = Store.getDB();
     const wholeStats = Store.getWholeStats();
 
     // 기간 내 과정 필터링
+    const periodCourses = db.courses.filter((c) => {
+      const d = c.date || '2026-01-01';
+      return d >= startDate && d <= endDate;
+    });
+
+    const periodCourseIds = new Set(periodCourses.map((c) => c.id));
+    const periodCompletions = db.completions.filter((comp) => periodCourseIds.has(comp.courseId));
+    const periodSats = db.satisfaction_responses.filter((s) => periodCourseIds.has(s.courseId));
+
+    const totalHours = periodCompletions.reduce((acc, c) => acc + (c.hours || 0), 0);
+    const avgSat = periodSats.length
+      ? (periodSats.reduce((a, s) => a + (s.scores.q1 + s.scores.q2 + s.scores.q3 + s.scores.q4 + s.scores.q5) / 5, 0) / periodSats.length).toFixed(2)
+      : '4.62';
+
+    // 소속기관별 통계 요약 (콤팩트 7개 기관)
+    const orgSummaries = [
+      '산업통상부 본부', '국가기술표준원', '무역위원회', '경제자유구역기획단',
+      '광업등록사무소', '자유무역지역관리원', '전기위원회'
+    ].map((orgName) => {
+      const orgEmps = db.employees.filter((e) => e.org === orgName);
+      const orgEmpIds = new Set(orgEmps.map((e) => e.id));
+      const orgCompCount = periodCompletions.filter((comp) => orgEmpIds.has(comp.employeeId)).length;
+      const orgRate = orgEmps.length > 0 ? Math.round((orgCompCount / orgEmps.length) * 100) : 0;
+      
+      // 역량 점수
+      const orgAss = db.assessment_responses.filter((a) => orgEmpIds.has(a.employeeId));
+      const avgScore = orgAss.length > 0 ? (orgAss.reduce((sum, a) => sum + a.totalScore, 0) / orgAss.length).toFixed(1) : '72.4';
+      const gInfo = getGradeInfo(Number(avgScore));
+
+      return {
+        org: orgName,
+        headcount: orgEmps.length,
+        compCount: orgCompCount,
+        rate: orgRate,
+        score: avgScore,
+        grade: gInfo.grade
+      };
+    });
+
+    return `
+      <div class="official-doc-sheet exec-summary-sheet one-page-strict">
+        <div class="doc-header-band" style="margin-bottom:4px;padding-bottom:4px;border-bottom:1.5px solid #0f2942;display:flex;justify-content:space-between;align-items:flex-end;">
+          <div>
+            <div class="doc-header-org" style="font-size:10px;color:#1e3a8a;font-weight:800;letter-spacing:1px;">산 업 통 상 부 · AI 역량 육성 보고</div>
+            <h1 class="doc-main-title" style="font-size:17px;margin:2px 0;font-weight:900;color:#09192b;">2026년도 「AI 360」 집합교육 및 직원 역량 성과 보고 (기관장 요약)</h1>
+          </div>
+          <div style="font-size:9.5px;text-align:right;color:#475569;line-height:1.3;">
+            <div><strong>보고 대상:</strong> 산업통상부 장관 및 각급 소속기관장</div>
+            <div><strong>보고 기준일:</strong> 2026. 11. 02. | <strong>조회 기간:</strong> ${esc(startDate)} ~ ${esc(endDate)}</div>
+          </div>
+        </div>
+
+        <!-- 1. 핵심 총괄 지표 -->
+        <div class="doc-section">
+          <div class="doc-sec-title">1. 기간 내 핵심 총괄 지표 (Key Highlights)</div>
+          <table class="doc-table compact text-center">
+            <thead>
+              <tr>
+                <th>총 관리 인원</th>
+                <th>개설 집합과정 수</th>
+                <th>누적 수료 건수</th>
+                <th>누적 이수시간</th>
+                <th>평균 만족도</th>
+                <th>전사 평균 AI 역량</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1,000명</strong></td>
+                <td><strong>${periodCourses.length}개 과정</strong></td>
+                <td><strong style="color:#1d4ed8;">${periodCompletions.length.toLocaleString()}건</strong></td>
+                <td><strong>${totalHours.toLocaleString()}h</strong></td>
+                <td><strong>${avgSat} / 5.0점</strong></td>
+                <td><strong>${wholeStats.avgCompetencyScore}점 (${esc(wholeStats.avgGradeInfo.grade)})</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 2. 소속기관별 현황 요약 (7개 기관 한눈에 비교) -->
+        <div class="doc-section">
+          <div class="doc-sec-title">2. 소속기관별 교육 이수 실적 및 역량 수준 비교</div>
+          <table class="doc-table compact">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th>소속기관명</th>
+                <th class="text-center">재적인원</th>
+                <th class="text-center">수료실적</th>
+                <th class="text-center">이수율</th>
+                <th class="text-center">평균 역량점수</th>
+                <th class="text-center">역량 등급</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orgSummaries.map((og) => `
+                <tr>
+                  <td><strong>${esc(og.org)}</strong></td>
+                  <td class="text-center">${og.headcount}명</td>
+                  <td class="text-center">${og.compCount}건</td>
+                  <td class="text-center"><strong>${og.rate}%</strong></td>
+                  <td class="text-center">${og.score}점</td>
+                  <td class="text-center"><span class="badge-subtle">${esc(og.grade)}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 3. 교육 전후 역량 상승 효과 분석 -->
+        <div class="doc-section">
+          <div class="doc-sec-title">3. 집합교육 수료 여부에 따른 직원 AI 역량 향상 실증 분석</div>
+          <table class="doc-table compact text-center">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th>수료 구분</th>
+                <th>분석 대상자</th>
+                <th>2026 상반기 평균</th>
+                <th>2026 하반기 평균</th>
+                <th>역량 향상폭 (Δ)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>2과정 이상 수료군</strong></td>
+                <td>340명</td>
+                <td>68.2점</td>
+                <td><strong>75.0점</strong></td>
+                <td><strong style="color:#059669;">+6.8점 상승 ▲</strong></td>
+              </tr>
+              <tr>
+                <td><strong>1과정 수료군</strong></td>
+                <td>420명</td>
+                <td>67.5점</td>
+                <td><strong>71.8점</strong></td>
+                <td><strong>+4.3점 상승 ▲</strong></td>
+              </tr>
+              <tr>
+                <td><strong>미수료군 (교육 미참가)</strong></td>
+                <td>240명</td>
+                <td>66.9점</td>
+                <td><strong>67.8점</strong></td>
+                <td>+0.9점 (유의차 미미)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 4. 주요 성과 및 향후 추진 계획 (단 1페이지 규격 내 엄격 요약) -->
+        <div class="doc-section">
+          <div class="doc-sec-title">4. 주요 성과 및 향후 계획 (종합 의견)</div>
+          <div class="doc-pre">○ [행정 혁신] 단일 과정 등록으로 QR 3종, 계획서·안내문 공문서, 현장 출결, 결과보고서 자동 생성하여 교육 행정 소요 시간 85% 절감
+○ [역량 실증] 2과정 이상 집합교육 수료 직원의 하반기 역량 점수가 미수료군 대비 뚜렷하게 상승(+6.8점)하여 실무 실습 중심 교육 실효성 입증
+○ [향후 계획] 보완 영역(프롬프트 설계·공공데이터 분석) 중심 소규모 맞춤 클리닉을 확대하고 미이수 단위 집중 독려 추진</div>
+        </div>
+
+        <div class="doc-footer-meta">
+          <div>발행: 산업통상부 AI 360 플랫폼 (AI Competency 360) · 고정 시드 기반 가상 샘플 데이터</div>
+          <div>※ 본 보고서는 캘린더 날짜 기간을 반영하여 <strong>A4 단 1장</strong>으로 자동 요약된 공식 보고서입니다.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 대시보드 운영 종합 보고서 (기간 내 전체 과정 및 실적 요약)
+   */
+  function buildDashboardReportHTML(startDate = '2026-01-01', endDate = '2026-12-31') {
+    const db = Store.getDB();
+    const wholeStats = Store.getWholeStats();
+
     const filteredCourses = db.courses.filter((c) => {
       const d = c.date || '2026-01-01';
       return d >= startDate && d <= endDate;
@@ -682,16 +944,18 @@
     let totalCompleted = 0;
     let satScores = [];
 
-    const courseRows = filteredCourses.map((c, idx) => {
+    // 과정 목록이 너무 길어지면 상위 12개 과정 위주로 표시하고 요약
+    const displayCourses = filteredCourses.slice(0, 12);
+
+    const courseRows = displayCourses.map((c, idx) => {
       const enrolled = db.enrollments.filter((e) => e.courseId === c.id && e.status === 'active').length;
       const completed = db.completions.filter((comp) => comp.courseId === c.id).length;
       const sats = db.satisfaction_responses.filter((s) => s.courseId === c.id);
       let satAvg = '-';
       if (sats.length > 0) {
         const sum = sats.reduce((acc, cur) => acc + (cur.scores.q1 + cur.scores.q2 + cur.scores.q3 + cur.scores.q4 + cur.scores.q5) / 5, 0);
-        const avg = sum / sats.length;
-        satAvg = avg.toFixed(1);
-        satScores.push(avg);
+        satAvg = (sum / sats.length).toFixed(1);
+        satScores.push(Number(satAvg));
       }
       totalCap += (c.capacity || 0);
       totalEnrolled += enrolled;
@@ -701,9 +965,9 @@
         <tr>
           <td>${idx + 1}</td>
           <td>${esc(c.date)}</td>
-          <td><strong>${esc(c.title)}</strong></td>
+          <td style="text-align:left;"><strong>${esc(c.title)}</strong></td>
           <td>${esc(c.place)}</td>
-          <td>${c.hours}시간</td>
+          <td>${c.hours}h</td>
           <td>${c.capacity}명</td>
           <td>${enrolled}명</td>
           <td><strong>${completed}명</strong> (${enrolled > 0 ? ((completed / enrolled) * 100).toFixed(1) : 0}%)</td>
@@ -715,106 +979,104 @@
     const periodSatAvg = satScores.length > 0 ? (satScores.reduce((a, b) => a + b, 0) / satScores.length).toFixed(1) : '4.6';
     const compRate = totalEnrolled > 0 ? ((totalCompleted / totalEnrolled) * 100).toFixed(1) : '94.2';
 
-    const sheetHTML = `
-      <div class="a4-document a4-exec-report">
-        <div class="doc-header-band">
-          <div class="doc-logo-area">
-            <span class="doc-emblem">360°</span>
-            <div>
-              <div class="doc-org">산업통상부 및 소속기관 AI 역량 전주기 관리 플랫폼</div>
-              <div class="doc-service">AI Competency 360 대시보드 운영 실적 보고서</div>
-            </div>
+    return `
+      <div class="official-doc-sheet exec-summary-sheet one-page-strict">
+        <div class="doc-header-band" style="margin-bottom:6px;padding-bottom:4px;border-bottom:1.5px solid #0f2942;display:flex;justify-content:space-between;align-items:flex-end;">
+          <div>
+            <div class="doc-header-org" style="font-size:10px;color:#1e3a8a;font-weight:800;letter-spacing:1px;">산업통상부 및 6개 소속기관 AI 360 대시보드 리포트</div>
+            <h1 class="doc-main-title" style="font-size:17px;margin:2px 0;font-weight:900;color:#09192b;">AI 360 대시보드 종합 운영 실적 보고서</h1>
           </div>
-          <div class="doc-meta-box">
-            <div><strong>추출 기간:</strong> ${esc(startDate)} ~ ${esc(endDate)}</div>
-            <div><strong>출력 일시:</strong> 2026-11-02</div>
-            <div><strong>보고 대상:</strong> 전사 총괄 관리자 및 각급 기관장</div>
+          <div style="font-size:9.5px;text-align:right;color:#475569;">
+            <div><strong>출력 일시:</strong> 2026. 11. 02.</div>
+            <div><strong>조회 기간:</strong> ${esc(startDate)} ~ ${esc(endDate)}</div>
           </div>
         </div>
 
-        <h1 class="doc-title">산업통상부 AI 360 대시보드 운영 실적 보고서</h1>
-        <div class="doc-subtitle">조회 기간(${esc(startDate)} ~ ${esc(endDate)}) 내 집합교육 추진 현황 및 종합 핵심 지표</div>
-
-        <div class="doc-sec-title">1. 기간 내 핵심 총괄 지표 (Key Summary)</div>
-        <table class="doc-table compact text-center">
-          <thead>
-            <tr style="background:#f1f5f9;">
-              <th>조회 기간</th>
-              <th>개설 집합과정 수</th>
-              <th>총 정원</th>
-              <th>누적 참가신청</th>
-              <th>현장 출석·수료 인원</th>
-              <th>수료율</th>
-              <th>평균 만족도</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>${esc(startDate)} ~ ${esc(endDate)}</strong></td>
-              <td><strong>${filteredCourses.length}개 과정</strong></td>
-              <td>${totalCap.toLocaleString()}명</td>
-              <td>${totalEnrolled.toLocaleString()}명</td>
-              <td><strong style="color:#1d4ed8;">${totalCompleted.toLocaleString()}명</strong></td>
-              <td><strong>${compRate}%</strong></td>
-              <td><strong>${periodSatAvg} / 5.0점</strong></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="doc-sec-title">2. 기간 내 집합교육 과정별 세부 운영 실적</div>
-        <table class="doc-table compact text-center">
-          <thead>
-            <tr style="background:#f1f5f9;">
-              <th>연번</th>
-              <th>교육일자</th>
-              <th>교육 과정명</th>
-              <th>교육장소</th>
-              <th>시간</th>
-              <th>정원</th>
-              <th>신청인원</th>
-              <th>수료인원(수료율)</th>
-              <th>만족도</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${courseRows || '<tr><td colspan="9" class="text-center">해당 기간 내 개설된 교육 과정이 없습니다.</td></tr>'}
-          </tbody>
-        </table>
-
-        <div class="doc-sec-title">3. 소속기관별 이수율 및 역량 수준</div>
-        <table class="doc-table compact text-center">
-          <thead>
-            <tr style="background:#f1f5f9;">
-              <th>기관명</th>
-              <th>재적인원</th>
-              <th>집합교육 수료인원</th>
-              <th>필수교육 이수율</th>
-              <th>평균 역량점수</th>
-              <th>역량 최우수(S·A) 비율</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${wholeStats.orgComparison.map((og) => `
-              <tr>
-                <td style="text-align:left;"><strong>${esc(og.org)}</strong></td>
-                <td>${og.headcount}명</td>
-                <td>${og.completionCount}명</td>
-                <td><strong>${og.requiredRate}%</strong></td>
-                <td>${og.avgScore.toFixed(1)}점</td>
-                <td>${og.saRatio}%</td>
+        <div class="doc-section">
+          <div class="doc-sec-title">1. 기간 내 대시보드 핵심 종합 지표</div>
+          <table class="doc-table compact text-center">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th>조회 대상 기간</th>
+                <th>개설 과정 수</th>
+                <th>총 정원</th>
+                <th>참가 신청 인원</th>
+                <th>현장 수료 인원</th>
+                <th>수료율</th>
+                <th>평균 만족도</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>${esc(startDate)} ~ ${esc(endDate)}</strong></td>
+                <td><strong>${filteredCourses.length}개 과정</strong></td>
+                <td>${totalCap.toLocaleString()}명</td>
+                <td>${totalEnrolled.toLocaleString()}명</td>
+                <td><strong style="color:#1d4ed8;">${totalCompleted.toLocaleString()}명</strong></td>
+                <td><strong>${compRate}%</strong></td>
+                <td><strong>${periodSatAvg} / 5.0점</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        <div class="doc-footer-meta" style="margin-top:20px;padding-top:10px;border-top:1px solid #cbd5e1;display:flex;justify-content:space-between;font-size:11px;color:#64748b;">
-          <div>발행 시스템: 산업통상부 AI 360° 플랫폼 (AI Competency 360)</div>
-          <div>※ 본 문서는 선택된 캘린더 날짜 범위 데이터를 기반으로 자동 집계된 공식 보고서입니다.</div>
+        <div class="doc-section">
+          <div class="doc-sec-title">2. 기간 내 집합교육 과정별 세부 운영 현황 (${filteredCourses.length}건 중 ${displayCourses.length}건 표시)</div>
+          <table class="doc-table compact text-center">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th>연번</th>
+                <th>교육일자</th>
+                <th style="text-align:left;">교육 과정명</th>
+                <th>장소</th>
+                <th>시간</th>
+                <th>정원</th>
+                <th>신청</th>
+                <th>수료(수료율)</th>
+                <th>만족도</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${courseRows || '<tr><td colspan="9" class="text-center">해당 기간 내 개설된 교육 과정이 없습니다.</td></tr>'}
+              ${filteredCourses.length > 12 ? `<tr><td colspan="9" class="text-center text-muted">... 외 ${filteredCourses.length - 12}개 과정 운영 실적 요약 포함</td></tr>` : ''}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-section">
+          <div class="doc-sec-title">3. 소속기관별 누적 교육 수료 및 AI 역량 비교</div>
+          <table class="doc-table compact text-center">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th>기관명</th>
+                <th>재적인원</th>
+                <th>수료건수</th>
+                <th>필수교육 이수율</th>
+                <th>평균 역량점수</th>
+                <th>최우수(S·A) 비율</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${wholeStats.orgComparison.slice(0, 7).map((og) => `
+                <tr>
+                  <td style="text-align:left;"><strong>${esc(og.org)}</strong></td>
+                  <td>${og.headcount}명</td>
+                  <td>${og.completionCount}명</td>
+                  <td><strong>${og.requiredRate}%</strong></td>
+                  <td>${og.avgScore.toFixed(1)}점</td>
+                  <td>${og.saRatio}%</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-footer-meta">
+          <div>발행 시스템: 산업통상부 AI 360 플랫폼 (AI Competency 360)</div>
+          <div>※ 본 대시보드 리포트는 캘린더 기간 데이터를 기반으로 자동 집계된 A4 1장 요약 보고서입니다.</div>
         </div>
       </div>
     `;
-
-    printA4Document(sheetHTML);
   }
 
   /**
@@ -1199,8 +1461,8 @@
         <div class="guide-step-card">
           <div class="gs-num">STEP 6</div>
           <div class="gs-body">
-            <h4>[성과 보고 & 다운로드] 교육 수료 전·후 역량 상승 입증 & 캘린더 대시보드 다운로드</h4>
-            <p>수료 과정 수에 따른 역량 상승 효과를 확인하고 캘린더 날짜 범위 대시보드 인쇄/엑셀을 다운로드합니다.</p>
+            <h4>[성과 보고 &amp; PDF 다운로드] 교육 수료 전·후 역량 상승 입증 &amp; 대시보드 캘린더 다운로드</h4>
+            <p>수료 과정 수에 따른 역량 상승 효과를 확인하고 캘린더 날짜 범위 대시보드 및 기관장 보고서 PDF를 다운로드합니다.</p>
           </div>
           <button class="btn btn-sm btn-primary" data-guide-act="step6">성과 보고서 →</button>
         </div>
@@ -1322,9 +1584,13 @@
     openQRSimulatorModal,
     openEmployeeDetailModal,
     openDemoGuideModal,
-    openDashboardDownloadModal,
+    openDashboardDownloadModal: openReportDownloadModal,
+    openReportDownloadModal,
     renderPlatformIntro,
     printA4Document,
+    downloadHTMLAsPDF,
+    buildExecutiveOnePageHTML,
+    buildDashboardReportHTML,
     toggleSidebar,
     openSidebar,
     closeSidebar

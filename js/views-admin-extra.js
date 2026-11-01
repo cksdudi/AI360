@@ -765,10 +765,10 @@
       </div>
     `;
 
-    const doPrintExec = () => window.AI360App.printA4Document(execReportHTML);
-    container.querySelector('#btn-print-exec-report')?.addEventListener('click', doPrintExec);
-    container.querySelector('#btn-print-exec-report-2')?.addEventListener('click', doPrintExec);
-    const doOpenDashDl = () => window.AI360App.openDashboardDownloadModal();
+    const doOpenExecDl = () => window.AI360App.openReportDownloadModal('exec');
+    const doOpenDashDl = () => window.AI360App.openReportDownloadModal('dashboard');
+    container.querySelector('#btn-print-exec-report')?.addEventListener('click', doOpenExecDl);
+    container.querySelector('#btn-print-exec-report-2')?.addEventListener('click', doOpenExecDl);
     container.querySelector('#btn-open-dash-download')?.addEventListener('click', doOpenDashDl);
     container.querySelector('#btn-open-dash-download-2')?.addEventListener('click', doOpenDashDl);
 
