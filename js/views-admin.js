@@ -1,3 +1,37 @@
+
+  /* =========================================================================
+   * 집합교육 개설 목록 엑셀 다운로드 유틸리티
+   * ========================================================================= */
+  function exportAdminCoursesToExcel() {
+    const db = Store.getDB();
+    const rows = db.courses.map((c, idx) => {
+      const summary = Store.getCourseSummary(c.id);
+      return {
+        '연번': idx + 1,
+        '과정코드': c.code,
+        '과정명': c.title,
+        'AI 핵심주제': c.topic,
+        '필수여부': c.required ? '필수' : '선택',
+        '진행상태': c.status,
+        '교육일시': `${c.date} ${c.startTime}~${c.endTime}`,
+        '교육시간(h)': c.hours,
+        '교육장소': c.place,
+        '초빙강사': `${c.instructorName} (${c.instructorOrg || '-'})`,
+        '대상직급': (c.targetRanks || []).join(', '),
+        '대상기관': (c.targetOrgs || []).join(', '),
+        '정원': c.capacity,
+        '신청인원': summary.enrollList.length,
+        '신청률(%)': summary.enrollRateOfCap,
+        '출석/수료인원': summary.completeList.length,
+        '수료율(%)': summary.completionRate,
+        '만족도응답수': summary.satList.length,
+        '평균만족도(5점)': summary.satOverallAvg || '-'
+      };
+    });
+    window.AI360Utils.exportToXLSX(rows, `AI360_개설_집합교육목록_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    showToast(`개설 집합교육 ${rows.length}개 과정 목록이 엑셀로 다운로드되었습니다.`, 'success');
+  }
+
 ﻿/**
  * AI 360 — 총괄 관리자 화면 Part 1 (① 통합 대시보드, ② 집합교육 전주기 자동화 관리)
  */
@@ -128,35 +162,53 @@
         ${unassignedMgrs > 0 ? `<button class="todo-pill danger" data-admin-go="admin-managers">담당자 미지정 단위 <strong>${unassignedMgrs}곳</strong></button>` : `<span class="todo-pill ok">조직 담당자 전 단위 지정 완료</span>`}
       </div>
 
-      <!-- 전사 KPI 6종 -->
+      <!-- 전사 KPI 6종 (클릭 시 해당 출처 데이터 화면으로 직결) -->
       <div class="kpi-grid kpi-grid-6">
-        <div class="kpi-card">
-          <div class="kpi-label">조회 범위 인원 <span class="sample-mini">샘플</span></div>
+        <div class="kpi-card kpi-clickable" data-drill-target="admin-roster" title="클릭 시 인사명부 · 조직 관리 출처 화면으로 이동합니다.">
+          <div class="kpi-card-header-row">
+            <div class="kpi-label">조회 범위 인원 <span class="sample-mini">샘플</span></div>
+            <span class="kpi-link-badge">출처 데이터 ↗</span>
+          </div>
           <div class="kpi-value">${scopeStats.headcount.toLocaleString()}명</div>
           <div class="kpi-sub">7개 기관 · 56개 부서 총 ${db.employees.length.toLocaleString()}명</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">개설 집합교육 과정</div>
+        <div class="kpi-card kpi-clickable" data-drill-target="admin-courses" title="클릭 시 집합교육 통합 관리 출처 화면으로 이동합니다.">
+          <div class="kpi-card-header-row">
+            <div class="kpi-label">개설 집합교육 과정</div>
+            <span class="kpi-link-badge">출처 데이터 ↗</span>
+          </div>
           <div class="kpi-value">${db.courses.length}개</div>
           <div class="kpi-sub">완료 ${db.courses.filter((c) => c.status === '결과보고 완료').length} · 진행/예정 ${db.courses.filter((c) => c.status !== '결과보고 완료').length}</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">누적 수료 · 수료율</div>
+        <div class="kpi-card kpi-clickable" data-drill-target="admin-analytics" title="클릭 시 수료 성과 분석 · 보고서 출처 화면으로 이동합니다.">
+          <div class="kpi-card-header-row">
+            <div class="kpi-label">누적 수료 · 수료율</div>
+            <span class="kpi-link-badge">출처 데이터 ↗</span>
+          </div>
           <div class="kpi-value">${scopeStats.totalCompletions.toLocaleString()}건</div>
           <div class="kpi-sub">신청 대비 수료율 ${scopeStats.completionRate}% (${scopeStats.totalHours}h)</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">교육 평균 만족도</div>
+        <div class="kpi-card kpi-clickable" data-drill-target="admin-analytics" title="클릭 시 만족도 조사 종합 분석 출처 화면으로 이동합니다.">
+          <div class="kpi-card-header-row">
+            <div class="kpi-label">교육 평균 만족도</div>
+            <span class="kpi-link-badge">출처 데이터 ↗</span>
+          </div>
           <div class="kpi-value">${avgSat} <small>/ 5.0</small></div>
           <div class="kpi-sub">수료자 QR 응답 ${allSats.length.toLocaleString()}건 집계</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">하반기 진단 응답률</div>
+        <div class="kpi-card kpi-clickable" data-drill-target="admin-assessments" title="클릭 시 역량 진단 회차 관리 출처 화면으로 이동합니다.">
+          <div class="kpi-card-header-row">
+            <div class="kpi-label">하반기 진단 응답률</div>
+            <span class="kpi-link-badge">출처 데이터 ↗</span>
+          </div>
           <div class="kpi-value">${scopeStats.diagResponseRate}%</div>
           <div class="kpi-sub">${scopeStats.diagRespondedCount.toLocaleString()} / ${scopeStats.headcount.toLocaleString()}명 참여</div>
         </div>
-        <div class="kpi-card highlight">
-          <div class="kpi-label">평균 AI 역량 점수</div>
+        <div class="kpi-card highlight kpi-clickable" data-drill-target="admin-assessments" title="클릭 시 AI 역량 진단 관리 출처 화면으로 이동합니다.">
+          <div class="kpi-card-header-row">
+            <div class="kpi-label">평균 AI 역량 점수</div>
+            <span class="kpi-link-badge">출처 데이터 ↗</span>
+          </div>
           <div class="kpi-value-row">
             <span class="kpi-value">${scopeStats.avgCompetencyScore}점</span>
             <span class="grade-pill" style="background:${scopeStats.avgGradeInfo.bg};color:${scopeStats.avgGradeInfo.color}">${esc(scopeStats.avgGradeInfo.grade)}</span>
@@ -235,8 +287,8 @@
                   ? (sats.reduce((a, r) => a + (r.scores.S1 + r.scores.S2 + r.scores.S3 + r.scores.S4 + r.scores.S5) / 5, 0) / sats.length).toFixed(2) + '점'
                   : '-';
                 return `
-                  <tr>
-                    <td><span class="topic-chip">${esc(topic)}</span></td>
+                  <tr class="topic-row-clickable" data-drill-topic="${esc(topic)}" title="클릭 시 「${esc(topic)}」 관련 집합교육 목록으로 이동합니다.">
+                    <td><span class="topic-chip">${esc(topic)}</span> <span class="kpi-link-badge" style="font-size:10px;">이동 ↗</span></td>
                     <td><strong>${tCourses.length}개</strong></td>
                     <td>${cap}명</td>
                     <td>${enr}명</td>
@@ -257,6 +309,22 @@
     container.querySelector('#btn-dash-download')?.addEventListener('click', () => {
       window.AI360App.openReportDownloadModal('dashboard');
     });
+    // KPI 카드 클릭 시 해당 출처 데이터 화면으로 이동
+    container.querySelectorAll('.kpi-card[data-drill-target]').forEach((card) => {
+      card.addEventListener('click', () => {
+        Store.setActiveMenu(card.dataset.drillTarget);
+      });
+    });
+
+    // 10대 주제별 행 클릭 시 해당 주제 과정으로 이동
+    container.querySelectorAll('.topic-row-clickable').forEach((tr) => {
+      tr.addEventListener('click', () => {
+        const topic = tr.dataset.drillTopic;
+        const matched = Store.getDB().courses.find((c) => c.topic === topic);
+        Store.setActiveMenu('admin-courses', matched ? { selectedCourseId: matched.id } : {});
+      });
+    });
+
     container.querySelectorAll('[data-admin-go]').forEach((b) => {
       b.addEventListener('click', () => Store.setActiveMenu(b.dataset.adminGo));
     });
@@ -314,6 +382,7 @@
           <p class="page-desc">교육 한 건만 등록하면 QR 3종, A4 공문서 계획서, 안내문 및 대상자 명단, 출석·수료 집계, 만족도 결과보고서까지 한 흐름으로 자동 생성됩니다.</p>
         </div>
         <div class="head-actions">
+          <button id="btn-export-courses-excel" class="btn btn-outline btn-lg">📥 개설 교육 목록 엑셀 다운로드</button>
           <button id="btn-open-register-course" class="btn btn-primary btn-lg">+ 신규 집합교육 등록</button>
         </div>
       </div>
@@ -356,6 +425,7 @@
       </div>
     `;
 
+    container.querySelector('#btn-export-courses-excel')?.addEventListener('click', exportAdminCoursesToExcel);
     container.querySelector('#btn-open-register-course')?.addEventListener('click', openCourseRegisterModal);
 
     container.querySelectorAll('[data-crs-filter]').forEach((b) => {
@@ -398,10 +468,13 @@
               🎯 대상: ${esc(formatTargetSummary(course))} (정원 ${course.capacity}명)
             </p>
           </div>
-          <div class="ws-quick-stats">
-            <div><small>신청</small><strong>${summary.enrollList.length}명</strong><span>(${summary.enrollRateOfCap}%)</span></div>
-            <div><small>출석·수료</small><strong>${summary.completeList.length}명</strong><span>(${summary.completionRate}%)</span></div>
-            <div><small>만족도</small><strong>${summary.satOverallAvg || '-'}점</strong><span>(${summary.satList.length}명)</span></div>
+          <div class="ws-head-actions-row">
+            <div class="ws-quick-stats">
+              <div><small>신청</small><strong>${summary.enrollList.length}명</strong><span>(${summary.enrollRateOfCap}%)</span></div>
+              <div><small>출석·수료</small><strong>${summary.completeList.length}명</strong><span>(${summary.completionRate}%)</span></div>
+              <div><small>만족도</small><strong>${summary.satOverallAvg || '-'}점</strong><span>(${summary.satList.length}명)</span></div>
+            </div>
+            <button id="btn-delete-course" class="btn btn-sm btn-danger-outline" title="등록된 교육 과정 및 연관 데이터를 안전하게 삭제합니다.">🗑️ 과정 삭제</button>
           </div>
         </div>
 
@@ -923,6 +996,15 @@
    * ========================================================================= */
   function bindWorkspaceEvents(container, summary) {
     const { course, docBundle } = summary;
+
+    container.querySelector('#btn-delete-course')?.addEventListener('click', () => {
+      if (!confirm(`정말 「${course.title}」(${course.code}) 과정을 삭제하시겠습니까?\n\n※ 주의: 이 과정에 등록된 교육생 신청, 출석, 수료 및 만족도 응답 데이터가 모두 함께 삭제됩니다.`)) return;
+      const res = Store.deleteCourse(course.id);
+      showToast(res.message, res.ok ? 'info' : 'warning');
+      if (res.ok) {
+        Store.setActiveMenu('admin-courses');
+      }
+    });
 
     container.querySelectorAll('[data-ws-tab]').forEach((t) => {
       t.addEventListener('click', () => {

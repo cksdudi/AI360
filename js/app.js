@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AI 360 — 메인 애플리케이션 컨트롤러
  * 1. 상단 글로벌 바 (5단계 시연 사용자 전환, 나의 화면 ↔ 관리 화면 전환, 샘플 데이터 초기화, 발표 시연 가이드)
  * 2. 좌측 상단 AI 360 클릭 시 "플랫폼 특장점 소개 페이지"
@@ -1186,6 +1186,7 @@
             <p>교육 당일 현장에 게시된 「출석 QR」을 스캔해 주세요.</p>
           </div>
           <button class="btn btn-sm btn-outline btn-block mt-8" data-switch-qr-type="attend">출석 QR 화면으로 바로 전환 →</button>
+          <button id="qr-modal-cancel-btn" class="btn btn-sm btn-danger-outline btn-block mt-8">참가 신청 취소하기</button>
         ` : `
           <button id="qr-modal-apply-btn" class="btn btn-primary btn-lg btn-block">원터치 교육 참가 신청하기</button>
         `}
@@ -1294,6 +1295,12 @@
       });
     });
 
+    modal.querySelector('#qr-modal-cancel-btn')?.addEventListener('click', () => {
+      if (!confirm('정말 이 교육 신청을 취소하시겠습니까?')) return;
+      const res = Store.cancelEnrollment(courseId, actor.id);
+      showToast(res.message, res.ok ? 'info' : 'warning');
+      openQRSimulatorModal(courseId, 'apply', actor.id);
+    });
     modal.querySelector('#qr-modal-apply-btn')?.addEventListener('click', () => {
       const res = Store.enrollCourse(courseId, actor.id, 'QR신청');
       showToast(res.message, res.ok ? 'success' : 'warning');

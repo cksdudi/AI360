@@ -695,6 +695,25 @@
     return { ok: true, message: `「${course.title}」 신청이 완료되었습니다.` };
   }
 
+  function deleteCourse(courseId) {
+    const idx = db.courses.findIndex((c) => c.id === courseId);
+    if (idx < 0) return { ok: false, message: '해당 교육 과정을 찾을 수 없습니다.' };
+    const course = db.courses[idx];
+
+    // 연관된 신청, 출석, 수료, 만족도 데이터 및 자동 생성 산출물 정리
+    db.courses.splice(idx, 1);
+    db.enrollments = db.enrollments.filter((e) => e.courseId !== courseId);
+    db.attendances = db.attendances.filter((a) => a.courseId !== courseId);
+    db.completions = db.completions.filter((comp) => comp.courseId !== courseId);
+    db.satisfaction_responses = db.satisfaction_responses.filter((s) => s.courseId !== courseId);
+    if (db.generated_docs) {
+      delete db.generated_docs[courseId];
+    }
+
+    addAuditLog('교육 과정 삭제', `관리자 — 「${course.title}」(${course.code}) 과정 및 연관 신청/출석/수료 데이터 삭제 완료`);
+    saveDB(true);
+    return { ok: true, message: `「${course.title}」 과정이 안전하게 삭제되었습니다.` };
+  }
   function cancelEnrollment(courseId, employeeId) {
     const idx = db.enrollments.findIndex((e) => e.courseId === courseId && e.employeeId === employeeId && e.status === 'active');
     if (idx < 0) return { ok: false, message: '신청 내역이 없습니다.' };
@@ -1158,6 +1177,7 @@
     saveReportDoc,
     enrollCourse,
     cancelEnrollment,
+    deleteCourse,
     checkInAttendanceQR,
     manualCompleteAttendance,
     submitSatisfaction,
