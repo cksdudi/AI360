@@ -82,9 +82,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">연 1~2회 전 직원 역량 측정 · 회차 운영</span>
-          <h1 class="page-title">AI 역량 진단 회차 관리 및 결과 분석</h1>
-          <p class="page-desc">진단 회차를 개설·마감하고, 소속기관별 응답률과 회차 간 역량 상승 변화를 분석합니다.</p>
+          <span class="section-eyebrow">역량 진단</span>
+          <h1 class="page-title">AI 역량 진단 회차 관리</h1>
+          <p class="page-desc">진단 회차 운영 및 기관별 응답·역량 변화 분석</p>
         </div>
         <div class="head-actions">
           <button id="btn-new-round-modal" class="btn btn-primary">+ 신규 진단 회차 개설</button>
@@ -266,9 +266,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">전 기관 인사·교육 대상 명단 동기화</span>
-          <h1 class="page-title">교육 대상자 명단 관리 (현재 등록 ${db.employees.length.toLocaleString()}명)</h1>
-          <p class="page-desc">표준 6개 컬럼 양식을 다운로드하여 엑셀로 업로드하면 컬럼 검증 및 변경 건수 미리보기 후 「전체 교체」 또는 「추가·갱신」할 수 있습니다.</p>
+          <span class="section-eyebrow">인사 명부</span>
+          <h1 class="page-title">교육 대상자 명부 관리</h1>
+          <p class="page-desc">전체 직원 명부 조회 및 엑셀 일괄 동기화</p>
         </div>
         <div class="head-actions">
           <button id="btn-dl-roster-template" class="btn btn-outline">📥 명단양식 다운로드 (6컬럼+예시 3행)</button>
@@ -325,7 +325,7 @@
                   <td>${esc(e.dept)}</td>
                   <td>${esc(e.rank)}</td>
                   <td><button class="link-btn" data-emp-modal="${esc(e.id)}"><strong>${esc(e.name)}</strong></button></td>
-                  <td><span class="sample-mini">샘플</span></td>
+                  <td><span class="badge-subtle">기본</span></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -512,9 +512,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">5단계 계층형 권한 · 조직 단위당 1명 지정 원칙</span>
-          <h1 class="page-title">소속기관 · 실·국 · 부서 담당자 지정 관리</h1>
-          <p class="page-desc">각 조직 단위당 1명만 지정되며 새로 지정하면 기존 담당자는 자동 해제됩니다. 초기값은 각 단위 첫 과장으로 「샘플 자동지정」되어 있습니다.</p>
+          <span class="section-eyebrow">권한 관리</span>
+          <h1 class="page-title">조직별 담당자 지정</h1>
+          <p class="page-desc">기관·실국·부서별 AI 교육 담당자 권한 설정</p>
         </div>
       </div>
 
@@ -691,9 +691,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">전사 교육 성과 입증 및 경영진 의사결정 보고</span>
-          <h1 class="page-title">AI 역량 육성 성과 분석 및 기관장 1페이지 요약 보고</h1>
-          <p class="page-desc">소속기관별·주제별 운영 실적과 집합교육 이수 전후 AI 역량 상승 효과를 정량 분석합니다.</p>
+          <span class="section-eyebrow">성과 분석</span>
+          <h1 class="page-title">교육 성과 분석 및 보고</h1>
+          <p class="page-desc">기관별 운영 실적 및 사전·사후 역량 상승 분석</p>
         </div>
         <div class="head-actions">
           <button id="btn-dl-perf-excel" class="btn btn-outline">📥 전사 성과 분석 엑셀 다운로드</button>

@@ -160,9 +160,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">${esc(roleMeta.badge)} · 타 조직 비공개 / 전체 평균만 비교 제공</span>
-          <h1 class="page-title">${esc(effScope.label)} AI 교육·역량 현황</h1>
-          <p class="page-desc">관할 범위 외 다른 기관·실·국·부서 데이터는 열람할 수 없으며, 비교 기준선으로 전 기관 평균값만 함께 표시됩니다.</p>
+          <span class="section-eyebrow">${esc(roleMeta.badge)}</span>
+          <h1 class="page-title">${esc(effScope.label)} 대시보드</h1>
+          <p class="page-desc">소속 조직 교육 이수 및 역량 진단 현황</p>
         </div>
         <div class="head-actions">
           <button id="btn-export-mgr-summary" class="btn btn-outline">📥 현황 요약 엑셀 다운로드</button>
@@ -175,7 +175,7 @@
       <!-- 7대 핵심 KPI 카드 -->
       <div class="kpi-grid kpi-grid-7">
         <div class="kpi-card">
-          <div class="kpi-label">소속 인원 <span class="sample-mini">샘플</span></div>
+          <div class="kpi-label">소속 인원</div>
           <div class="kpi-value">${stats.headcount.toLocaleString()}명</div>
           <div class="kpi-sub">전체의 ${((stats.headcount / db.employees.length) * 100).toFixed(1)}%</div>
         </div>
@@ -388,9 +388,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">관할 구성원 학습·진단 이력 상세</span>
-          <h1 class="page-title">${esc(effScope.label)} 구성원 목록 (${filtered.length} / ${emps.length}명)</h1>
-          <p class="page-desc">구성원 이름을 클릭하면 개인별 7축 역량 레이더와 교육 이수 이력을 드릴다운하여 조회합니다.</p>
+          <span class="section-eyebrow">구성원 관리</span>
+          <h1 class="page-title">소속 구성원 현황</h1>
+          <p class="page-desc">개인별 AI 역량 레이더 및 교육 이력 조회</p>
         </div>
         <div class="head-actions">
           <button id="btn-export-members" class="btn btn-outline">📥 구성원 현황 엑셀 다운로드</button>
@@ -548,9 +548,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">참여율 제고 자동화 도구</span>
-          <h1 class="page-title">${esc(effScope.label)} 미이수 · 미응답 독려 센터</h1>
-          <p class="page-desc">독려 대상을 자동 추출하여 메신저·메일 문구를 복사하고 명단 엑셀 다운로드 및 독려 이력을 남깁니다.</p>
+          <span class="section-eyebrow">이수 독려</span>
+          <h1 class="page-title">미이수 · 미응답 독려</h1>
+          <p class="page-desc">교육 미이수자 및 진단 미응답자 알림 발송</p>
         </div>
       </div>
 

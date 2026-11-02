@@ -421,6 +421,19 @@
 
   function downloadExcel(filename, sheetName, rowsArray) {
     const safeFile = filename.endsWith('.xlsx') ? filename : filename + '.xlsx';
+    if (!rowsArray || !rowsArray.length) {
+      console.warn('downloadExcel: 데이터가 없습니다.');
+      return;
+    }
+    // 객체 배열인 경우 2차원 배열(AOA)로 자동 변환
+    if (typeof rowsArray[0] === 'object' && !Array.isArray(rowsArray[0])) {
+      const headers = Object.keys(rowsArray[0]);
+      const aoa = [headers];
+      for (const item of rowsArray) {
+        aoa.push(headers.map((h) => item[h] ?? ''));
+      }
+      rowsArray = aoa;
+    }
     if (window.XLSX && window.XLSX.utils) {
       const wb = window.XLSX.utils.book_new();
       const ws = window.XLSX.utils.aoa_to_sheet(rowsArray);
@@ -723,6 +736,13 @@
     }, 3200);
   }
 
+  function exportToXLSX(data, filename, sheetName) {
+    if (typeof data === 'string' && typeof filename !== 'string') {
+      return downloadExcel(data, sheetName || 'Sheet1', filename);
+    }
+    return downloadExcel(filename || 'export.xlsx', sheetName || 'Sheet1', data);
+  }
+
   window.AI360Utils = {
     createPRNG,
     esc,
@@ -732,6 +752,7 @@
     renderQRSVG,
     downloadQRPng,
     downloadExcel,
+    exportToXLSX,
     parseExcelFile,
     createSamplePhotoDataURL,
     copyText,

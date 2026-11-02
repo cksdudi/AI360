@@ -126,9 +126,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">개인 맞춤형 역량 &amp; 학습 포털</span>
-          <h1 class="page-title">${esc(emp.name)} ${esc(emp.rank)}님의 AI 역량 대시보드</h1>
-          <p class="page-desc">${esc(emp.org)} &gt; ${esc(emp.bureau)} &gt; ${esc(emp.dept)} · AI 역량 진단 결과와 집합교육 이수 현황이 실시간 연동됩니다.</p>
+          <span class="section-eyebrow">나의 AI 현황</span>
+          <h1 class="page-title">${esc(emp.name)} 님의 대시보드</h1>
+          <p class="page-desc">${esc(emp.org)} · ${esc(emp.dept)}</p>
         </div>
         <div class="head-actions">
           ${openRound ? `<button class="btn ${answeredOpenRound ? 'btn-outline' : 'btn-primary'}" data-go-menu="student-assessment">
@@ -138,51 +138,39 @@
         </div>
       </div>
 
-      <!-- KPI 4종 (클릭 시 출처 데이터 드릴다운 연동) -->
+      <!-- KPI 4종 (숫자 클릭 시 출처 데이터 이동) -->
       <div class="kpi-grid kpi-grid-4">
-        <div class="kpi-card highlight kpi-clickable" data-drill-target="student-assessment" title="클릭 시 AI 역량 진단 화면으로 이동합니다.">
-          <div class="kpi-card-header-row">
-            <div class="kpi-label">최근 AI 역량 점수 · 등급 <span class="sample-mini">샘플</span></div>
-            <span class="kpi-link-badge">출처 데이터 ↗</span>
-          </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">최근 AI 역량 점수</div>
           <div class="kpi-value-row">
-            <span class="kpi-value">${latest ? latestScore.toFixed(1) + '점' : '미진단'}</span>
+            <span class="kpi-value kpi-num-link" data-drill-target="student-assessment" title="클릭 시 AI 역량 진단 화면으로 이동합니다">${latest ? latestScore.toFixed(1) + '점' : '미진단'}</span>
             <span class="grade-pill" style="background:${gInfo.bg};color:${gInfo.color}">${esc(gInfo.grade)}</span>
           </div>
-          <div class="kpi-sub">전 기관 평균 ${wholeStats.avgCompetencyScore}점 대비 ${latest ? ((latestScore - wholeStats.avgCompetencyScore >= 0 ? '+' : '') + (latestScore - wholeStats.avgCompetencyScore).toFixed(1) + '점') : '진단 필요'}</div>
+          <div class="kpi-sub">전 기관 평균 대비 ${latest ? ((latestScore - wholeStats.avgCompetencyScore >= 0 ? '+' : '') + (latestScore - wholeStats.avgCompetencyScore).toFixed(1) + '점') : '진단 필요'}</div>
         </div>
-        <div class="kpi-card kpi-clickable" data-drill-target="student-growth" title="클릭 시 나의 AI 성장 기록 화면으로 이동합니다.">
-          <div class="kpi-card-header-row">
-            <div class="kpi-label">수료 집합교육 과정 수 <span class="sample-mini">샘플</span></div>
-            <span class="kpi-link-badge">출처 데이터 ↗</span>
-          </div>
+        <div class="kpi-card">
+          <div class="kpi-label">수료 집합교육 과정</div>
           <div class="kpi-value-row">
-            <span class="kpi-value">${profile.myCompletions.length}개 과정</span>
+            <span class="kpi-value kpi-num-link" data-drill-target="student-growth" title="클릭 시 나의 AI 성장 기록으로 이동합니다">${profile.myCompletions.length}개 과정</span>
             <span class="kpi-tag">신청 ${profile.myEnrollments.length}건</span>
           </div>
-          <div class="kpi-sub">현장 QR 출석 인증과 동시에 자동 집계</div>
+          <div class="kpi-sub">현장 QR 출석 인증 집계</div>
         </div>
-        <div class="kpi-card kpi-clickable" data-drill-target="student-growth" title="클릭 시 나의 AI 성장 기록 화면으로 이동합니다.">
-          <div class="kpi-card-header-row">
-            <div class="kpi-label">누적 AI 교육 이수시간 <span class="sample-mini">샘플</span></div>
-            <span class="kpi-link-badge">출처 데이터 ↗</span>
-          </div>
+        <div class="kpi-card">
+          <div class="kpi-label">누적 AI 교육시간</div>
           <div class="kpi-value-row">
-            <span class="kpi-value">${profile.totalHours}시간</span>
-            <span class="kpi-tag">연간 권장 12h</span>
+            <span class="kpi-value kpi-num-link" data-drill-target="student-growth" title="클릭 시 나의 AI 성장 기록으로 이동합니다">${profile.totalHours}시간</span>
+            <span class="kpi-tag">권장 12h</span>
           </div>
-          <div class="kpi-sub">부서원 평균 대비 체계적 학습 이력 관리</div>
+          <div class="kpi-sub">체계적 이수 관리</div>
         </div>
-        <div class="kpi-card kpi-clickable" data-drill-target="student-courses" title="클릭 시 교육 안내 및 신청 화면으로 이동합니다.">
-          <div class="kpi-card-header-row">
-            <div class="kpi-label">2026 필수교육 이수 여부 <span class="sample-mini">샘플</span></div>
-            <span class="kpi-link-badge">출처 데이터 ↗</span>
-          </div>
+        <div class="kpi-card">
+          <div class="kpi-label">필수교육 이수</div>
           <div class="kpi-value-row">
-            <span class="kpi-value ${profile.hasCompletedRequired ? 'text-success' : 'text-danger'}">${profile.hasCompletedRequired ? '이수 완료' : '미이수'}</span>
+            <span class="kpi-value kpi-num-link ${profile.hasCompletedRequired ? 'text-success' : 'text-danger'}" data-drill-target="student-courses" title="클릭 시 교육 안내 및 신청 화면으로 이동합니다">${profile.hasCompletedRequired ? '이수 완료' : '미이수'}</span>
             <span class="status-dot ${profile.hasCompletedRequired ? 'ok' : 'warn'}"></span>
           </div>
-          <div class="kpi-sub">${profile.hasCompletedRequired ? '공공 AI 윤리·보안 필수과정 충족' : '필수 지정 집합교육 수강이 필요합니다'}</div>
+          <div class="kpi-sub">${profile.hasCompletedRequired ? '필수과정 충족' : '필수 집합교육 수강 필요'}</div>
         </div>
       </div>
 
@@ -249,7 +237,7 @@
                     <p>${esc(n.body)}</p>
                     <span class="notice-time">${esc(n.createdAt)}</span>
                   </div>
-                  <button class="btn btn-xs btn-ghost">바로가기 →</button>
+                  
                 </div>
               `;
             }).join('')}
@@ -340,9 +328,10 @@
   }
 
   function bindStudentDashboardEvents(container, empId) {
-    container.querySelectorAll('.kpi-card[data-drill-target]').forEach((card) => {
-      card.addEventListener('click', () => {
-        Store.setActiveMenu(card.dataset.drillTarget);
+    container.querySelectorAll('.kpi-num-link[data-drill-target]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        Store.setActiveMenu(el.dataset.drillTarget);
       });
     });
     container.querySelectorAll('[data-go-menu]').forEach((btn) => {
@@ -401,9 +390,9 @@
     container.innerHTML = `
       <div class="page-head">
         <div>
-          <span class="section-eyebrow">집합교육 안내 · 온라인/QR 신청</span>
-          <h1 class="page-title">교육 안내 및 수강 신청</h1>
-          <p class="page-desc">본인 직급(${esc(emp.rank)}) 및 소속(${esc(emp.org)})에 해당하는 집합교육을 확인하고 즉시 신청·취소할 수 있습니다.</p>
+          <span class="section-eyebrow">수강 신청</span>
+          <h1 class="page-title">집합교육 안내 및 신청</h1>
+          <p class="page-desc">신청 가능한 집합교육 일정 및 상세 안내</p>
         </div>
       </div>
 

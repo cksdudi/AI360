@@ -2783,3 +2783,18 @@ body.sidebar-locked {
     width: 100%;
   }
 }
+
+/* 집계 숫자 드릴다운 인터랙션: 마우스를 대면 밑줄 생성 */
+.kpi-num-link {
+  cursor: pointer;
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.kpi-num-link:hover {
+  color: var(--blue-600) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+}
